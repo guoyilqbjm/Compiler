@@ -3,9 +3,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 struct Operand{
-	enum {VARIABLE, CONSTANT, ADDRESS} kind;
+	enum {TEMP, VARIABLE, CONSTANT, ADDRESS} kind;
 	union{
-		int var_no;
+		int temp_no;
+		char *var_name;
 		int value;
 	} data;
 };
@@ -14,12 +15,10 @@ typedef struct Operand* OperandPoint;
 
 struct InterCode{
 //	enum { LABEL, FUNCTION, ASSIGN, ADD, SUB, MUL, DIV, GOTO, DEC, ARG, CALL, PARAM, READ, WRITE} kind;
-	enum { LABEL } kind;
+	enum { ONEOP, BINOP, THREEOP } kind;
 	union{
-		struct{ OperandPoint right, left;} assign;
-		struct{ OperandPoint result, op1, op2;} binop;
-		char *defname;
-		OperandPoint oneop;
+		struct{ OperandPoint right, left; int opkind;} oneop;
+		struct{ OperandPoint result, op1, op2; int opkind;} binop;
 	} data;
 };
 
