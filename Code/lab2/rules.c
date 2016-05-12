@@ -116,7 +116,7 @@ void getStmt(TypePoint returnType,TreeNode *head){
 		getStmt(returnType,child);
 		child = child->nextSibling;
 		if(child != NULL){
-			getStmt(returnType,child->nextSibling->nextSibling);
+			getStmt(returnType,child->nextSibling);
 		}
 	}
 }
@@ -192,7 +192,7 @@ TypePoint getSpecifier(TreeNode *head){
 		TreeNode *brother = child->nextSibling;
 		if(brother->name == OptTag || brother->name == Empty){
 			isInsert++;
-			char *name = NULL;
+			char *name = NULL; 
 			int lineno = 0;
 			if(brother->name == OptTag){
 				name = brother->firstChild->data;
@@ -441,8 +441,11 @@ TypePoint getExp(TreeNode *head){
 			}
 		}
 		TypePoint type1 = getExp(child), type2 = getExp(child->nextSibling->nextSibling);
+
 		if(type1 == NULL || type2 == NULL)
 			return NULL;
+//		printf("%s %s %d行\n",getName(type1->data.basic),getName(type2->data.basic),child->lineno);
+
 		if(testType(type1,type2)==-1){
 			printf("Error type 5 at Line %d: Type mismatched for \"%s\".\n",child->lineno,getName(child->nextSibling->name));
 			return NULL;
@@ -463,6 +466,12 @@ TypePoint getExp(TreeNode *head){
 				printf("Error type 6 at Line %d: Type mismatched for \"%s\".\n",child->lineno,child->data);
 				return NULL;
 			}
+			if(child->name == RELOP){//比较结果应该返回int型的值
+				TypePoint newType = (TypePoint)malloc(sizeof(Type));
+				newType->kind = BASIC;
+				newType->data.basic = INT;
+				return newType;
+		 	}
 		}
 
 		return type1;
@@ -545,7 +554,7 @@ TypePoint getExp(TreeNode *head){
 			}
 		}
 		else{
-			if(find->type->kind == STRUCTURE && strcmp(find->type->data.structure->name,find->name)==0){
+			if(find->type->kind == STRUCTURE && find->type->data.structure->name != NULL && strcmp(find->type->data.structure->name,find->name)==0){
 				printf("Error type 13 at Line %d: \"%s\" is a struct, isn't a variable.\n",child->lineno,find->name);
 				return NULL;
 			}

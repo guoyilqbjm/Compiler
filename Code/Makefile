@@ -18,7 +18,7 @@ LFO = $(LFC:.c=.o)
 YFO = $(YFC:.c=.o)
 parser: syntax $(filter-out $(LFO),$(OBJS))
 	$(CC) -o parser $(filter-out $(LFO),$(OBJS)) -lfl -ly
-TestFile = "../Test/test2.cmm"
+TestFile = "../Test/lab3/1.cmm"
 syntax: lexical syntax-c
 	$(CC) -c $(YFC) -o $(YFO)
 
@@ -35,7 +35,7 @@ syntax-c: $(YFILE)
 test:
 	make clean
 	make
-	./parser $(TestFile)
+	./parser $(TestFile) output.ir
 clean:
 	rm -f parser lex.yy.c syntax.tab.c syntax.tab.h syntax.output
 	rm -f $(OBJS) $(OBJS:.o=.d)
