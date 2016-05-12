@@ -1,5 +1,10 @@
 #include "codestructure.h"
 #include <stdio.h>
+
+struct InterCodes* code_root = NULL;
+struct InterCodes* code_tail = NULL;
+
+
 void insert(InterCodes* data){
 	data->next = NULL;
 	if(code_root == NULL){
@@ -24,8 +29,9 @@ void printInterCodes(char *filename){
 	}
 	while(p != NULL){
 		switch(p->code.kind){
-			case LABEL: fprintf(fp,"LABEL %s :\n",p->code.data.defname); break;
+			/*case LABEL: fprintf(fp,"LABEL %s :\n",p->code.data.defname); break;
 			case FUNCTION: fprintf(fp,"FUNCTION %s :\n",p->code.data.defname);break;
+			*/
 			default: fprintf(fp,"Don't Finished the Function.\n"); break;
 		}
 		p = p->next;
@@ -44,7 +50,7 @@ InterCodes* mallocInterCodes(){
 	InterCodes *p = (InterCodes *)malloc(sizeof(InterCodes));
 	return p;
 }
-
+/*
 void testCode(char *filename){
 	InterCodes *p;
 	p = mallocInterCodes();
@@ -72,3 +78,5 @@ int mainn(int argc,char *argv[]){
 	printInterCodes(argv[2]);
 
 }
+
+*/

@@ -540,6 +540,7 @@ TypePoint getExp(TreeNode *head){
 						child = child->nextSibling->nextSibling->firstChild;
 					}
 				}
+				printf("Should never arrivs this %s %d.\n",__FILE__,__LINE__);
 			return tempType->data.structure->type;
 			}
 		}

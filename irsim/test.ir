@@ -1,0 +1,4 @@
+FUNCTION main :
+READ t1
+WRITE t1
+RETURN #0
