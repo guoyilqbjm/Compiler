@@ -4,11 +4,10 @@
 #include "../tree.h"
 #include "../lab2/table.h"
 
-int varIndex = 0, labelIndex = 0;
+int new_temp_varname();
 
-char *new_temp_varname();
+int new_temp_labelname();
 
-char *new_temp_labelname();
+InterCodes* translate_Exp(TreeNode *root, OperandPoint op);
 
-InterCodes* translate_Exp(TreeNode *root, char * varname);
 #endif

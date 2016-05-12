@@ -1,23 +1,24 @@
 #include "code_gr.h"
 #include <stdlib.h>
 #include <stdio.h>
-
-char *new_temp_varname(){
-	char *varname = (char *)malloc(sizeof(4));
+int varIndex=-1, labelIndex=-1;
+char VARNAME[100][4], LABELNAME[100][4];
+int new_temp_varname(){
+	varIndex++;
+	char *varname = VARNAME[varIndex];
 	varname[0] = 't';
 	varname[1] = (char)(varIndex / 10);
 	varname[2] = (char)(varIndex % 10);
 	varname[3] = '\0';
-	varIndex++;
-	return varname;
+	return varIndex;
 }
 
-char *new_temp_labelname(){
-	char *label = (char*)malloc(sizeof(4));
-	label[0] = 'v';
+int new_temp_labelname(){
+	labelIndex++;
+	char *label = LABELNAME[labelIndex];
+	label[0] = 'l';
 	label[1] = (char)(labelIndex / 10);
 	label[2] = (char)(labelIndex % 10);
 	label[3] = '\0';
-	labelIndex++;
-	return label;
+	return labelIndex;
 }
