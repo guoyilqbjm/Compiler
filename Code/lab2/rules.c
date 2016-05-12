@@ -444,7 +444,6 @@ TypePoint getExp(TreeNode *head){
 
 		if(type1 == NULL || type2 == NULL)
 			return NULL;
-//		printf("%s %s %d行\n",getName(type1->data.basic),getName(type2->data.basic),child->lineno);
 
 		if(testType(type1,type2)==-1){
 			printf("Error type 5 at Line %d: Type mismatched for \"%s\".\n",child->lineno,getName(child->nextSibling->name));
@@ -503,8 +502,9 @@ TypePoint getExp(TreeNode *head){
 			else{
 				TypePoint tempType = find->type;
 				if(child->nextSibling->nextSibling->name == RP){
-					if(tempType->data.structure->tail == NULL)
-						return tempType;
+					if(tempType->data.structure->tail == NULL){
+						return tempType->data.structure->type;
+					}
 					else{
 						printf("Error type 9 at Line %d: Too few arguments for function \"%s\".\n",child->lineno,find->name);
 						return NULL;
@@ -540,6 +540,7 @@ TypePoint getExp(TreeNode *head){
 						child = child->nextSibling->nextSibling->firstChild;
 					}
 				}
+			return tempType->data.structure->type;
 			}
 		}
 		TableNode *find = findTableNode(child->data);

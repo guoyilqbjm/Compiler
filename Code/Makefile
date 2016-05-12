@@ -35,7 +35,7 @@ syntax-c: $(YFILE)
 test:
 	make clean
 	make
-	./parser $(TestFile) output.ir
+	./parser $(TestFile) ../irsim/output.ir
 clean:
 	rm -f parser lex.yy.c syntax.tab.c syntax.tab.h syntax.output
 	rm -f $(OBJS) $(OBJS:.o=.d)
