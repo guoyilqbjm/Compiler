@@ -1,0 +1,6 @@
+int main()
+{
+	int 3wrongidname;
+	int i;
+	int a[2.0][10];
+}
