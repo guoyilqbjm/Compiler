@@ -3,7 +3,6 @@
 #include <string.h>
 #include <stdio.h>
 
-
 int isInsert = 1;
 int opType = 0;// -1 variable exists in the symbol table.
 							// 0 variable create success but not insert into the symbol table, such as the variable in the structure.

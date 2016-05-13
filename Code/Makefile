@@ -16,6 +16,8 @@ LFC = $(shell find ./ -name "*.l" | sed s/[^/]*\\.l/lex.yy.c/)
 YFC = $(shell find ./ -name "*.y" | sed s/[^/]*\\.y/syntax.tab.c/)
 LFO = $(LFC:.c=.o)
 YFO = $(YFC:.c=.o)
+LABE2TEMPFILE = $(shell find ./lab2/ -name "*.~")
+LABE3TEMPFILE = $(shell find ./lab3/ -name "*.~")
 parser: syntax $(filter-out $(LFO),$(OBJS))
 	$(CC) -o parser $(filter-out $(LFO),$(OBJS)) -lfl -ly
 TestFile = "../Test/lab3/1.cmm"
@@ -41,4 +43,4 @@ clean:
 	rm -f $(OBJS) $(OBJS:.o=.d)
 	rm -f $(LFC) $(YFC) $(YFC:.c=.h)
 	#rm -f	lab2/*.o 
-	rm -f *~
+	rm -f $(*.~) $(LAB2TEMPFILE) $(LAB3TEMPFILE)

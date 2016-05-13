@@ -50,6 +50,19 @@ InterCodes* mallocInterCodes(){
 	InterCodes *p = (InterCodes *)malloc(sizeof(InterCodes));
 	return p;
 }
+
+InterCodes *mergeInterCodes(InterCodes *a,InterCodes *b){
+	if(a == NULL && b == NULL)
+		return NULL;
+	else if(a == NULL)
+		return b;
+	else
+		return a;
+	a->next = b;
+	b->last = a;
+	return a;
+}
+
 /*
 void testCode(char *filename){
 	InterCodes *p;

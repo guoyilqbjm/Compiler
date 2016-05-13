@@ -34,6 +34,9 @@ extern struct InterCodes* code_tail;
 
 void insert(InterCodes* data);
 
+InterCodes* mergeInterCodes(InterCodes* a,InterCodes *b);
+
+
 void printInterCodes(char *filename);
 
 #endif
