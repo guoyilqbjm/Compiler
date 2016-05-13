@@ -1,8 +1,7 @@
 #!/bin/sh
 #convient for compiler expriment.
 
-github='http://www.github.com/Compiler.git'
-
+github='http://www.github.com/gybjm2016/Compiler.git'
 if [ ! -x batch.sh ]; then
 	chmod +x "batch.sh"
 fi
@@ -20,12 +19,10 @@ HELP
 	exit 0
 fi			
 
-SWPFILE=find ./ -name "*.swp"
 if [ $1 = "commit" ]; then
 	cd Code
 	make clean
 	cd ..
-	rm -f $SWPFILE
 	git add -A
 	git commit 
 elif [ $1 = "submit" ]; then
