@@ -1,37 +1,65 @@
 #include "codestructure.h"
+#include "code_gr.h"
 #include <stdio.h>
-
+#include <assert.h>
 struct InterCodes* code_root = NULL;
 struct InterCodes* code_tail = NULL;
 
 
-void insert(InterCodes* data){
-	data->next = NULL;
-	if(code_root == NULL){
-		code_root = data;
-		data->last = NULL;
-		code_tail = code_root;
+char *getOperandName(OperandPoint p){
+	assert(p != NULL);
+	char *data = NULL;
+	switch(p->kind){
+		case TEMP: return get_temp_varname(p->data.temp_no);
+		case VARIABLE: return p->data.var_name;
+		case CONSTANT: 
+			data = (char*)malloc(32);
+			sprintf(&(data[1]),"%d",p->data.value);data[0] = '#';
+			return data;
+		case ADDRESS:printf("Don't finish Address %s %d.\n",__FILE__,__LINE__);break;
+		default:printf("Wrrong！\n");return NULL;
 	}
-	else{
-		code_tail->next = data;
-		data->last = code_tail;
-		code_tail = data;
-	}
-	printf("%d %d\n",(int)code_root,(int)code_tail);
 }
 
 void printInterCodes(char *filename){
 	InterCodes *p = code_root;
+	if(p == NULL){
+		printf("生成中间代码出错.\n");
+		return;
+	}
+	printf("输出到文件：\n");
 	FILE *fp = fopen(filename,"w");
 	if(fp == NULL){
 		printf("Cannot open file \"%s\".\n",filename);
 		return;
 	}
+	int i=0;
 	while(p != NULL){
+		printf("i=%d\n",i);
+		++i;
 		switch(p->code.kind){
-			/*case LABEL: fprintf(fp,"LABEL %s :\n",p->code.data.defname); break;
-			case FUNCTION: fprintf(fp,"FUNCTION %s :\n",p->code.data.defname);break;
-			*/
+			case LABEL: fprintf(fp,"LABEL %s :\n",p->code.data.symbol_name); break;
+			case FUNCTIONLABEL: fprintf(fp,"FUNCTION %s :\n",p->code.data.symbol_name);break;
+			case PARAM:fprintf(fp,"PARAM %s :\n",p->code.data.symbol_name); break;
+			case GOTO:fprintf(fp,"GOTO %s\n",p->code.data.symbol_name); break;
+			case RETURNFUNCTION:fprintf(fp,"RETURN %s\n",p->code.data.symbol_name); break;
+			case ARG:fprintf(fp,"ARG %s\n",p->code.data.symbol_name);
+			case ONEOP:fprintf(fp,"%s := %s\n",getOperandName(p->code.data.oneop.left),getOperandName(p->code.data.oneop.right)); break;
+			case BINOP:fprintf(fp,"%s := %s ",getOperandName(p->code.data.binop.result),getOperandName(p->code.data.binop.op1));
+				int opkind = p->code.data.binop.opkind;
+				if(opkind == PLUS)
+					fprintf(fp,"+ ");
+				else if(opkind == MINUS)
+					fprintf(fp,"- ");
+				else if(opkind == STAR)
+					fprintf(fp,"* ");
+				else
+					fprintf(fp,"/ ");
+				fprintf(fp,"%s\n",getOperandName(p->code.data.binop.op2));
+				break;
+			case CALL: fprintf(fp,"%s := CALL %s\n",getOperandName(p->code.data.funcall.left),p->code.data.funcall.fun_name); break;
+			case DEC: fprintf(fp,"DEC %s %d\n",getOperandName(p->code.data.decstmt.left),p->code.data.decstmt.size); break;
+			case IFSTMT: fprintf(fp,"IF %s %s %s GOTO %s\n",getOperandName(p->code.data.ifstmt.left),p->code.data.ifstmt.relop,getOperandName(p->code.data.ifstmt.right),p->code.data.ifstmt.label); break;
 			default: fprintf(fp,"Don't Finished the Function.\n"); break;
 		}
 		p = p->next;
@@ -40,56 +68,23 @@ void printInterCodes(char *filename){
 	return;
 }
 
-OperandPoint mallocOperand(int kind){
-	OperandPoint p = (OperandPoint)malloc(sizeof(Operand));
-	p->kind = kind;
-	return p;
-}
-
-InterCodes* mallocInterCodes(){
-	InterCodes *p = (InterCodes *)malloc(sizeof(InterCodes));
-	return p;
-}
 
 InterCodes *mergeInterCodes(InterCodes *a,InterCodes *b){
 	if(a == NULL && b == NULL)
 		return NULL;
 	else if(a == NULL)
 		return b;
-	else
+	else if(b == NULL)
 		return a;
-	a->next = b;
-	b->last = a;
-	return a;
-}
-
-/*
-void testCode(char *filename){
-	InterCodes *p;
-	p = mallocInterCodes();
-	p->code.kind = FUNCTION;
-	p->code.data.defname = "main";
-	insert(p);
-	p = mallocInterCodes();
-  p->code.kind = READ;
-	OperandPoint data = mallocOperand(VARIABLE);
-	p->code.data.oneop = data;
-	insert(p);
-	p = mallocInterCodes();
-	p->code.kind = WRITE;
-	p->code.data.oneop = data;
-	insert(p);
-	printInterCodes(filename);
-}
-
-int mainn(int argc,char *argv[]){
-	if(argc != 3){
-		printf("Wrong!\n");
-		return 0;
+	else{
+		InterCodes *tail = a,*p = a;
+		while(p != NULL){
+			tail = p;
+			p=p->next;
+		}
+		tail->next = b;
+		b->last = tail;
+		return a;
 	}
-	testCode(argv[2]);
-	printInterCodes(argv[2]);
-
 }
 
-*/
