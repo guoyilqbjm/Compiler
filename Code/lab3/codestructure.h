@@ -19,6 +19,7 @@ struct InterCode{
 	enum { PARAM, FUNCTIONLABEL, LABEL, GOTO, RETURNFUNCTION, ARG, ONEOP, BINOP, CALL, DEC, IFSTMT} kind;//CALL 存储在funcall，DEC存储在decstmt IFSTMT存储在ifstmt;
 	union{
 		char symbol_name[20];
+		OperandPoint return_value;//存储return返回值
 		struct{ OperandPoint left; char *fun_name;} funcall;
 		struct{ OperandPoint left; int size;} decstmt;
 		struct{ OperandPoint left, right; int opkind;} oneop;

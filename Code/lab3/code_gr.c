@@ -141,8 +141,35 @@ InterCodes *translate_DefList(TreeNode *root){
 
 
 InterCodes *translate_StmtList(TreeNode *root){
+	if(root == NULL || root->name == Empty)
+		return NULL;
+	TreeNode *child = root->firstChild;
+	InterCodes *result = NULL;
+	while(1){
+		if(child == NULL || child->name == Empty)
+			break;
+		TreeNode * node = child->firstChild;
+		if(node->name == RETURN){
+			OperandPoint place = (OperandPoint)malloc(sizeof(Operand));
+			InterCodes *expcode = translate_Exp(node->nextSibling,place);
+			result = mergeInterCodes(result,expcode);
+			InterCodes *new_code = (InterCodes*)malloc(sizeof(InterCodes));
+			new_code->next = new_code->last = NULL;
+			new_code->code.kind = RETURNFUNCTION;
+			new_code->code.data.return_value = place;
+			result = mergeInterCodes(result,new_code);
+		}
+		else if(node->name == CompSt){
+			result = mergeInterCodes(result,translate_CompSt(node));
+		}
+		else{
+			printf("Don't finish in %s at %d.\n",__FILE__,__LINE__);
+			return NULL;
+		}
+		child = child->nextSibling->firstChild;
+	}
 	/*To-do*/
-	return NULL;
+	return result;
 }
 
 

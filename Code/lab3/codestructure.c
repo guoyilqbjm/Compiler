@@ -42,7 +42,7 @@ void printInterCodes(char *filename){
 			case FUNCTIONLABEL: fprintf(fp,"FUNCTION %s :\n",p->code.data.symbol_name);break;
 			case PARAM:fprintf(fp,"PARAM %s :\n",p->code.data.symbol_name); break;
 			case GOTO:fprintf(fp,"GOTO %s\n",p->code.data.symbol_name); break;
-			case RETURNFUNCTION:fprintf(fp,"RETURN %s\n",p->code.data.symbol_name); break;
+			case RETURNFUNCTION:fprintf(fp,"RETURN %s\n",getOperandName(p->code.data.return_value)); break;
 			case ARG:fprintf(fp,"ARG %s\n",p->code.data.symbol_name);
 			case ONEOP:fprintf(fp,"%s := %s\n",getOperandName(p->code.data.oneop.left),getOperandName(p->code.data.oneop.right)); break;
 			case BINOP:fprintf(fp,"%s := %s ",getOperandName(p->code.data.binop.result),getOperandName(p->code.data.binop.op1));
