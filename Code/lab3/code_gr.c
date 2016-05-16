@@ -66,6 +66,7 @@ InterCodes *translate_Program(TreeNode *root){
 
 
 InterCodes* translate_FunDec(TreeNode *root){
+	assert(root != NULL);
 	TreeNode *child = root->firstChild;
 	InterCodes *new_code = (InterCodes*)malloc(sizeof(InterCodes));
 	new_code->last = new_code->next = NULL;
@@ -74,7 +75,7 @@ InterCodes* translate_FunDec(TreeNode *root){
 	child = child->nextSibling->nextSibling;
 	if(child->name == VarList){
 		InterCodes* tail = new_code;
-		child = child->firstChild;//child->name == ParamDec
+		child = child->firstChild;//child->name == ParamDec VarList->ParamDec COMMA VarList | ParamDec
 		while(1){
 				TreeNode *tempnode = child->firstChild->nextSibling;//ParamDec->Specifier VarDec
 				tempnode = tempnode->firstChild;//VarDec->ID|VarDec LB INT RB
@@ -93,7 +94,7 @@ InterCodes* translate_FunDec(TreeNode *root){
 				if(child == NULL)
 					break;
 				else
-					child = child->nextSibling;//VarList->ParamDec COMMA VarList
+					child = child->nextSibling->firstChild;//VarList->ParamDec COMMA VarList child->name = ParamDec
 		}
 	}
 	return new_code;
