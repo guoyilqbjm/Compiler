@@ -13,13 +13,19 @@ usage: sh batch.sh [ARGUMENTS]
    or: ./batch.sh [ARGUMENTS]
 ARGUMENTS is one type of the followings:
     pull      pull all dates from "${github}" into master.
-    commit    commit all changes to local git.
+    commit summary   commit all changes to local git.
     submit    submit all local git to "${github}" by your account.
 HELP
 	exit 0
 fi			
 
 if [ $1 = "commit" ]; then
+	if [ $# -lt 2 ]; then
+		cat<<HELP
+		commit summary
+HELP
+exit 0
+	fi
 	cd Code
 	make clean
 	cd ..
@@ -37,7 +43,7 @@ usage: sh batch.sh [ARGUMENTS]
    or: ./batch.sh [ARGUMENTS]
 ARGUMENTS is one type of the followings:
     pull      pull all dates from "${github}" into master.
-    commit    commit all changes to local git.
+    commit summary   commit all changes to local git.
     submit    submit all local git to "${github}" by your account.
 HELP
 	fi
