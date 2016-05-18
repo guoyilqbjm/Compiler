@@ -16,13 +16,12 @@ char *get_temp_labelname(int i){
 	return LABELNAME[i];
 }
 
-
 int new_temp_varname(){
 	varIndex++;
 	char *varname = VARNAME[varIndex];
 	varname[0] = 't';
-	varname[1] = (char)(varIndex / 10);
-	varname[2] = (char)(varIndex % 10);
+	varname[1] = (char)(varIndex / 10 ) + '0';
+	varname[2] = (char)(varIndex % 10 ) + '0';
 	varname[3] = '\0';
 	return varIndex;
 }
@@ -31,8 +30,8 @@ int new_temp_labelname(){
 	labelIndex++;
 	char *label = LABELNAME[labelIndex];
 	label[0] = 'l';
-	label[1] = (char)(labelIndex / 10);
-	label[2] = (char)(labelIndex % 10);
+	label[1] = (char)(labelIndex / 10) + '0';
+	label[2] = (char)(labelIndex % 10) + '0';
 	label[3] = '\0';
 	return labelIndex;
 }
@@ -117,24 +116,36 @@ void runCode(char *filename){
 InterCodes *translate_DefList(TreeNode *root){
 	if(root == NULL || root->name == Empty)
 		return NULL;
-	TreeNode *child = root->firstChild;//DefList->Def DefList
-	TreeNode *dec = child->firstChild->nextSibling->firstChild;//DecList->Dec | Dec COMMA DecList dec->name = Dec
+	TreeNode *def = root->firstChild;//DefList->Def DefList
+	
 	InterCodes *result = NULL;
 	while(1){
-		TreeNode* vardec = dec->firstChild;//DecList->Dec | Dec COMMA DecList
-		if(vardec->nextSibling != NULL){//Dec->VarDec ASSIGNOP Exp
+		TreeNode *dec = def->firstChild->nextSibling->firstChild;//Def -> Specifier DecList SEMI
+																//DecList->Dec | Dec COMMA DecList dec->name = Dec
+		while(1){
+			TreeNode* vardec = dec->firstChild;	//Dec->VarDec | VarDec ASSIGNOP Exp
+			if(vardec->nextSibling != NULL){	//VarDec -> ID | VarDec LB INT RB
 
-			OperandPoint place = (OperandPoint)malloc(sizeof(Operand));
-			place->kind = VARIABLE;
-			place->data.var_name = vardec->firstChild->data;
-			InterCodes *temp_codes = translate_Exp(vardec->nextSibling->nextSibling,place);
-			result = mergeInterCodes(result,temp_codes);
+
+				OperandPoint place = (OperandPoint)malloc(sizeof(Operand));
+				place->kind = VARIABLE;
+				place->data.var_name = vardec->firstChild->data;
+				printf("%s  here\n",vardec->firstChild->data);
+				InterCodes *temp_codes = translate_Exp(vardec->nextSibling->nextSibling,place);
+				result = mergeInterCodes(result,temp_codes);
+			}
+			else if(vardec->firstChild->name != ID){
+				// TODO: array definiton / allocate memory
+			}
+			if(dec->nextSibling == NULL)
+				break;	
+			else
+				dec = dec->nextSibling->nextSibling->firstChild;
 		}
-		dec = dec->nextSibling;
-		if(dec == NULL)
-			break;	
+		if(def->nextSibling->name == Empty)
+			break;
 		else
-			dec = dec->nextSibling->firstChild;
+			def = def->nextSibling->firstChild;
 	}
 	return result;
 }
@@ -160,7 +171,12 @@ InterCodes *translate_StmtList(TreeNode *root){
 			result = mergeInterCodes(result,new_code);
 		}
 		else if(node->name == CompSt){
+			
 			result = mergeInterCodes(result,translate_CompSt(node));
+		}
+		else if(node->name == Exp){
+			OperandPoint place = (OperandPoint)malloc(sizeof(Operand));
+			result = mergeInterCodes(result,translate_Exp(node, place));
 		}
 		else{
 			printf("Don't finish in %s at %d.\n",__FILE__,__LINE__);
@@ -208,6 +224,7 @@ InterCodes* translate_Exp(TreeNode *root, OperandPoint place){
 		op1->kind = CONSTANT;
 		op1->data.value = 0;
 
+		printf("%s\n", "sss");
 		InterCodes* code1 = translate_Exp(child->nextSibling,new_temp);
 		InterCodes* code2 = (InterCodes*)malloc(sizeof(InterCodes));
 		code2->code.kind = BINOP;

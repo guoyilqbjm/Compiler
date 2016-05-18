@@ -1,3 +1,6 @@
 FUNCTION main :
-n := #0
-RETURN n
+a := #0
+c := #2
+t00 := #1
+d := #0 - t00
+RETURN b
