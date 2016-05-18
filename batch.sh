@@ -24,7 +24,7 @@ if [ $1 = "commit" ]; then
 	make clean
 	cd ..
 	git add -A
-	git commit 
+	git commit -m $2
 elif [ $1 = "submit" ]; then
 	git push ${github} master
 else

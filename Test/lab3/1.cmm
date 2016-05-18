@@ -1,4 +1,6 @@
 int main(){
-	int n = 0;
-	return n;
+	int a = 0,b,c=2;
+	int d = -1;
+	b = -d;
+	return b;
 }
