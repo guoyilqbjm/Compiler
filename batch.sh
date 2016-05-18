@@ -1,7 +1,7 @@
 #!/bin/sh
 #convient for compiler expriment.
 
-github='http://www.github.com/gybjm2016/Compiler.git'
+github='http://github.com/gybjm2016/Compiler.git'
 if [ ! -x batch.sh ]; then
 	chmod +x "batch.sh"
 fi
