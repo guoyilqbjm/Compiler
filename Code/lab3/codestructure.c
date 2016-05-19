@@ -18,7 +18,7 @@ char *getOperandName(OperandPoint p){
 			data[0] = '#';
 			return data;
 		case ADDRESS:printf("Don't finish Address %s %d.\n",__FILE__,__LINE__);break;
-		default:printf("Wrrong！\n");return NULL;
+		default:printf("Wrong in getOperandName()！\n");return NULL;
 	}
 }
 
@@ -34,21 +34,19 @@ void printInterCodes(char *filename){
 		printf("Cannot open file \"%s\".\n",filename);
 		return;
 	}
-	int i=0;
+	int i = 0;
 	while(p != NULL){
-		printf("i=%d\n",i);
-		++i;
+		printf("%d ", i); i++;
 		switch(p->code.kind){
-			case LABEL: fprintf(fp,"LABEL %s :\n",p->code.data.symbol_name); break;
+			case LABEL:	fprintf(fp,"LABEL %s :\n",p->code.data.symbol_name); break;
 			case FUNCTIONLABEL: fprintf(fp,"FUNCTION %s :\n",p->code.data.symbol_name);break;
-			case PARAM:fprintf(fp,"PARAM %s :\n",p->code.data.symbol_name); break;
-			case GOTO:fprintf(fp,"GOTO %s\n",p->code.data.symbol_name); break;
-			case RETURNFUNCTION:fprintf(fp,"RETURN %s\n",getOperandName(p->code.data.return_value)); break;
-			case ARG:fprintf(fp,"ARG %s\n",p->code.data.symbol_name);
-			case ONEOP:fprintf(fp,"%s := %s\n",getOperandName(p->code.data.oneop.left),getOperandName(p->code.data.oneop.right)); break;
-			case BINOP:fprintf(fp,"%s := %s ",getOperandName(p->code.data.binop.result),getOperandName(p->code.data.binop.op1));
+			case PARAM:	fprintf(fp,"PARAM %s\n",p->code.data.symbol_name); break;
+			case GOTO:	fprintf(fp,"GOTO %s\n",p->code.data.symbol_name); break;
+			case RETURNFUNCTION:	fprintf(fp,"RETURN %s\n",getOperandName(p->code.data.return_value)); break;
+			case ARG:	fprintf(fp,"ARG %s\n",p->code.data.symbol_name);
+			case ONEOP:	fprintf(fp,"%s := %s\n",getOperandName(p->code.data.oneop.left),getOperandName(p->code.data.oneop.right)); break;
+			case BINOP:	fprintf(fp,"%s := %s ",getOperandName(p->code.data.binop.result),getOperandName(p->code.data.binop.op1));
 				int opkind = p->code.data.binop.opkind;
-				
 				if(opkind == PLUS)
 					fprintf(fp,"+ ");
 				else if(opkind == MINUS)
@@ -59,10 +57,12 @@ void printInterCodes(char *filename){
 					fprintf(fp,"/ ");
 				fprintf(fp,"%s\n",getOperandName(p->code.data.binop.op2));
 				break;
-			case CALL: fprintf(fp,"%s := CALL %s\n",getOperandName(p->code.data.funcall.left),p->code.data.funcall.fun_name); break;
-			case DEC: fprintf(fp,"DEC %s %d\n",getOperandName(p->code.data.decstmt.left),p->code.data.decstmt.size); break;
-			case IFSTMT: fprintf(fp,"IF %s %s %s GOTO %s\n",getOperandName(p->code.data.ifstmt.left),p->code.data.ifstmt.relop,getOperandName(p->code.data.ifstmt.right),p->code.data.ifstmt.label); break;
-			default: fprintf(fp,"Don't Finished the Function.\n"); break;
+			case CALL:	fprintf(fp,"%s := CALL %s\n",getOperandName(p->code.data.funcall.left),p->code.data.funcall.fun_name); break;
+			case DEC:	fprintf(fp,"DEC %s %d\n",getOperandName(p->code.data.decstmt.left),p->code.data.decstmt.size); break;
+			case IFSTMT:	fprintf(fp, "IF %s %s %s GOTO %s\n", getOperandName(p->code.data.ifstmt.left), p->code.data.ifstmt.relop, getOperandName(p->code.data.ifstmt.right), p->code.data.ifstmt.label); break;
+			case READ:	fprintf(fp, "READ %s\n", p->code.data.symbol_name); break;
+			case WRITE:	fprintf(fp, "WRITE %s\n", getOperandName(p->code.data.operand_point)); break;
+			default:	fprintf(fp, "Not Finish the Function.%d\n", p->code.kind); break;
 		}
 		p = p->next;
 	}
@@ -80,9 +80,11 @@ InterCodes *mergeInterCodes(InterCodes *a, InterCodes *b){
 		return a;
 	else{
 		InterCodes *tail = a,*p = a;
+
 		while(p != NULL){
 			tail = p;
 			p=p->next;
+
 		}
 		tail->next = b;
 		b->last = tail;

@@ -1,18 +1,23 @@
+FUNCTION add :
+PARAM a :
+PARAM b :
+t0 := a + b
+RETURN t0
 FUNCTION main :
-a := #1
-t0 := #2
-t1 := #3
-b := t0 + t1
-d := #0
+READ t14
+x := t14
+READ t15
+y := t15
+PARAM (null) :
+WRITE t1
+t6 := #0
+PARAM (null) :
+t8 := x + y
+IF t7 == t8 GOTO l0
+GOTO l1
 LABEL l0 :
-d := #1
+t6 := #1
 LABEL l1 :
-f := #0
-LABEL l2 :
-f := #1
-LABEL l3 :
-p := #0
-LABEL l4 :
-p := #1
-LABEL l5 :
-RETURN a
+WRITE t6
+t0 := #0
+RETURN t0

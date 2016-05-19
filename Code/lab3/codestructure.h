@@ -16,30 +16,37 @@ typedef struct Operand* OperandPoint;
 
 struct InterCode{
 //	enum { LABEL, FUNCTION, ASSIGN, ADD, SUB, MUL, DIV, GOTO, DEC, ARG, CALL, PARAM, READ, WRITE} kind;
-	enum { PARAM, FUNCTIONLABEL, LABEL, GOTO, RETURNFUNCTION, ARG, ONEOP, BINOP, CALL, DEC, IFSTMT} kind;//CALL 存储在funcall，DEC存储在decstmt IFSTMT存储在ifstmt;
+	enum { PARAM, FUNCTIONLABEL, LABEL, GOTO, RETURNFUNCTION, ARG, ONEOP, BINOP, CALL, DEC, IFSTMT, READ, WRITE} kind;//CALL 存储在funcall，DEC存储在decstmt IFSTMT存储在ifstmt;
 	union{
 		char *symbol_name;
+		OperandPoint operand_point;
 		OperandPoint return_value;//存储return返回值
 		struct{ OperandPoint left; char *fun_name;} funcall;
 		struct{ OperandPoint left; int size;} decstmt;
 		struct{ OperandPoint left, right;} oneop;
 		struct{ OperandPoint result, op1, op2; int opkind;} binop;
-		struct{ OperandPoint left,right;char relop[3];char label[5];} ifstmt;//if left relop right goto label;
+		struct{ OperandPoint left, right; char relop[3]; char *label;} ifstmt;//if left relop right goto label;
 	} data;
 };
-
 typedef struct InterCode InterCode;
+
 struct InterCodes{
 	struct InterCode code;
 	struct InterCodes* last;
 	struct InterCodes* next;
 };
 typedef struct InterCodes InterCodes;
+
 extern struct InterCodes* code_root;
 extern struct InterCodes* code_tail;//未使用
 
-InterCodes* mergeInterCodes(InterCodes* a,InterCodes *b);//将中间代码a和b连接起来并且返回生成的新的代码的头节点指针
+struct ArgListNode{
+	OperandPoint operand_point;
+	struct ArgListNode *next;
+};
+typedef struct ArgListNode ArgListNode;
 
+InterCodes* mergeInterCodes(InterCodes* a,InterCodes *b);//将中间代码a和b连接起来并且返回生成的新的代码的头节点指针
 
 void printInterCodes(char *filename);//输出中间代码到文件filename中
 
