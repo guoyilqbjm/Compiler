@@ -14,7 +14,8 @@ char *getOperandName(OperandPoint p){
 		case VARIABLE: return p->data.var_name;
 		case CONSTANT: 
 			data = (char*)malloc(32);
-			sprintf(&(data[1]),"%d",p->data.value);data[0] = '#';
+			strcpy(&(data[1]),p->data.value);
+			data[0] = '#';
 			return data;
 		case ADDRESS:printf("Don't finish Address %s %d.\n",__FILE__,__LINE__);break;
 		default:printf("Wrrong！\n");return NULL;
@@ -47,6 +48,7 @@ void printInterCodes(char *filename){
 			case ONEOP:fprintf(fp,"%s := %s\n",getOperandName(p->code.data.oneop.left),getOperandName(p->code.data.oneop.right)); break;
 			case BINOP:fprintf(fp,"%s := %s ",getOperandName(p->code.data.binop.result),getOperandName(p->code.data.binop.op1));
 				int opkind = p->code.data.binop.opkind;
+				
 				if(opkind == PLUS)
 					fprintf(fp,"+ ");
 				else if(opkind == MINUS)
@@ -69,7 +71,7 @@ void printInterCodes(char *filename){
 }
 
 
-InterCodes *mergeInterCodes(InterCodes *a,InterCodes *b){
+InterCodes *mergeInterCodes(InterCodes *a, InterCodes *b){
 	if(a == NULL && b == NULL)
 		return NULL;
 	else if(a == NULL)

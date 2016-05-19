@@ -12,30 +12,48 @@ int const_table[200];//store every constant value for every varIndex;
 char *get_temp_varname(int i){
 	return VARNAME[i];
 }
-char *get_temp_labelname(int i){
-	return LABELNAME[i];
-}
+
 
 int new_temp_varname(){
 	varIndex++;
 	char *varname = VARNAME[varIndex];
 	varname[0] = 't';
-	varname[1] = (char)(varIndex / 10 ) + '0';
-	varname[2] = (char)(varIndex % 10 ) + '0';
-	varname[3] = '\0';
+	if(varIndex>10){
+		varname[1] = (char)(varIndex / 10 ) + '0';
+		varname[2] = (char)(varIndex % 10 ) + '0';
+		varname[3] = '\0';
+	}
+	else {
+		varname[1] = (char)(varIndex) + '0';
+		varname[2] = '\0';
+	}
 	return varIndex;
+
 }
 
-int new_temp_labelname(){
+char* new_temp_labelname(){
 	labelIndex++;
 	char *label = LABELNAME[labelIndex];
 	label[0] = 'l';
-	label[1] = (char)(labelIndex / 10) + '0';
-	label[2] = (char)(labelIndex % 10) + '0';
-	label[3] = '\0';
-	return labelIndex;
+	if(labelIndex>10){
+		label[1] = (char)(labelIndex / 10) + '0';
+		label[2] = (char)(labelIndex % 10) + '0';
+		label[3] = '\0';
+	}
+	else {
+		label[1] = (char)(labelIndex) + '0';
+		label[2] = '\0';
+	}
+	return LABELNAME[labelIndex];
 }
 
+void runCode(char *filename){
+	translate_Program(root);
+	
+	printInterCodes(filename);
+
+	printf("结果已经输出到文件\"%s\".\n",filename);
+}
 
 InterCodes *translate_Program(TreeNode *root){
 	if(root == NULL || root->name == Empty)
@@ -70,7 +88,7 @@ InterCodes* translate_FunDec(TreeNode *root){
 	InterCodes *new_code = (InterCodes*)malloc(sizeof(InterCodes));
 	new_code->last = new_code->next = NULL;
 	new_code->code.kind = FUNCTIONLABEL;
-	strcpy(new_code->code.data.symbol_name,child->data);
+	new_code->code.data.symbol_name = child->data;
 	child = child->nextSibling->nextSibling;
 	if(child->name == VarList){
 		InterCodes* tail = new_code;
@@ -87,7 +105,7 @@ InterCodes* translate_FunDec(TreeNode *root){
 				tail = temp_code;
 
 				temp_code->code.kind = PARAM;
-				strcpy(temp_code->code.data.symbol_name,tempnode->data);
+				temp_code->code.data.symbol_name = tempnode->data;
 				
 				child = child->nextSibling;
 				if(child == NULL)
@@ -105,13 +123,6 @@ InterCodes* translate_CompSt(TreeNode *root){
 	return mergeInterCodes(translate_DefList(child),translate_StmtList(child->nextSibling));
 }
 
-void runCode(char *filename){
-	translate_Program(root);
-	
-	printInterCodes(filename);
-
-	printf("结果已经输出到文件\"%s\".\n",filename);
-}
 
 InterCodes *translate_DefList(TreeNode *root){
 	if(root == NULL || root->name == Empty)
@@ -190,8 +201,8 @@ InterCodes *translate_StmtList(TreeNode *root){
 
 
 InterCodes* translate_Exp(TreeNode *root, OperandPoint place){
-	/*To-finish*/
 	TreeNode *child = root->firstChild;
+	TreeNode *operator = child->nextSibling;
 	InterCodes *new_code = (InterCodes *)malloc(sizeof(InterCodes));
 	new_code->last = new_code->next = NULL;
 	if(child->name == INT){
@@ -199,18 +210,19 @@ InterCodes* translate_Exp(TreeNode *root, OperandPoint place){
 		new_code->code.data.oneop.left = place;
 		OperandPoint right = (OperandPoint)malloc(sizeof(Operand));
 		right->kind = CONSTANT;
-		right->data.value = atoi(child->data);
+		right->data.value = child->data;
 		new_code->code.data.oneop.right = right;
-		printf("int test\n");
 	}
-	else if(child->name == ID){
-		/*new_code->code.kind = ONEOP;
-		new_code->code.data.oneop.opkind = ASSIGNOP;
+	else if(child->name == FLOAT) {
+		new_code->code.kind = ONEOP;
 		new_code->code.data.oneop.left = place;
 		OperandPoint right = (OperandPoint)malloc(sizeof(Operand));
-		right->kind = VARIABLE;
-		right->data.var_name = child->data;
-		new_code->code.data.oneop.right = right;*/
+		right->kind = CONSTANT;
+		right->data.value = child->data;
+		new_code->code.data.oneop.right = right;
+	}
+
+	else if(child->name == ID){
 
 		place->kind = VARIABLE;
 		place->data.var_name = child->data;
@@ -222,9 +234,9 @@ InterCodes* translate_Exp(TreeNode *root, OperandPoint place){
 		new_temp->data.temp_no = new_temp_varname();
 		OperandPoint op1 = (OperandPoint)malloc(sizeof(Operand));
 		op1->kind = CONSTANT;
-		op1->data.value = 0;
+		
+		op1->data.value = "0";
 
-		printf("%s\n", "sss");
 		InterCodes* code1 = translate_Exp(child->nextSibling,new_temp);
 		InterCodes* code2 = (InterCodes*)malloc(sizeof(InterCodes));
 		code2->code.kind = BINOP;
@@ -234,7 +246,57 @@ InterCodes* translate_Exp(TreeNode *root, OperandPoint place){
 		code2->code.data.binop.op2 = new_temp;
 		return mergeInterCodes(code1,code2);
 	}
-	
+	else if (child->name == NOT || operator->name == AND || operator->name == OR || operator->name == RELOP) {
+		
+		InterCodes *label1 = (InterCodes *)malloc(sizeof(InterCodes));
+		InterCodes *label2 = (InterCodes *)malloc(sizeof(InterCodes));
+		label1->code.kind = label2->code.kind = LABEL;
+		label1->last = label1->next = label2->last = label2->next = NULL;
+		label1->code.data.symbol_name = new_temp_labelname();
+		label2->code.data.symbol_name = new_temp_labelname();
+
+		OperandPoint op1 = (OperandPoint)malloc(sizeof(Operand));
+		op1->kind = CONSTANT;
+		op1->data.value = "0";
+		InterCodes *code0 = (InterCodes *)malloc(sizeof(InterCodes));
+		code0->last = code0->next = NULL;
+		code0->code.kind = ONEOP;
+		code0->code.data.oneop.left = place;
+		code0->code.data.oneop.right = op1;
+
+		InterCodes *code1 = NULL;
+
+		OperandPoint op2 = (OperandPoint)malloc(sizeof(Operand));
+		op2->kind = CONSTANT;
+		op2->data.value = "1";		
+		InterCodes *codetemp = (InterCodes *)malloc(sizeof(InterCodes));
+		codetemp->last = codetemp->next = NULL;		//FIXME!
+		codetemp->code.kind = ONEOP;
+		codetemp->code.data.oneop.left = place;
+		codetemp->code.data.oneop.right = op2;
+
+		InterCodes *code2 = mergeInterCodes(label1, codetemp);
+
+		return mergeInterCodes(mergeInterCodes(mergeInterCodes(code0, code1), code2), label2);
+	}
+	else if (operator->name == PLUS || operator->name == MINUS || operator->name == STAR || operator->name == DIV) {			//Exp1 PLUS Exp2
+		OperandPoint t1 = (OperandPoint)malloc(sizeof(Operand));
+		t1->kind = TEMP;
+		t1->data.temp_no = new_temp_varname();
+		OperandPoint t2 = (OperandPoint)malloc(sizeof(Operand));
+		t2->kind = TEMP;
+		t2->data.temp_no = new_temp_varname();
+		InterCodes *code1 = translate_Exp(child, t1);
+		InterCodes *code2 = translate_Exp(operator->nextSibling, t2);
+		InterCodes *code3 = (InterCodes *)malloc(sizeof(InterCodes));
+		code3->last = code3->next = NULL;
+		code3->code.kind = BINOP;
+		code3->code.data.binop.opkind = operator->name;
+		code3->code.data.binop.result = place;
+		code3->code.data.binop.op1 = t1;
+		code3->code.data.binop.op2 = t2;
+		return mergeInterCodes(mergeInterCodes(code1, code2), code3);
+	}
 	else{
 		printf("Don't finished the Function.\n");
 		return NULL;

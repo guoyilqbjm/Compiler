@@ -6,10 +6,9 @@
 #include "../syntax.tab.h"
 
 int new_temp_varname();//生成临时变量名序号
-int new_temp_labelname();//生成临时标号名序号
+char *new_temp_labelname();//生成临时标号名序号
 
 char *get_temp_varname(int i);//获取临时变量名
-char *get_temp_labelname(int i);//获取临时标号名
 
 
 InterCodes* translate_Exp(TreeNode *root, OperandPoint place);//To-finish

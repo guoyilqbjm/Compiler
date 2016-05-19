@@ -1,6 +1,18 @@
 FUNCTION main :
-a := #0
-c := #2
-t00 := #1
-d := #0 - t00
-RETURN b
+a := #1
+t0 := #2
+t1 := #3
+b := t0 + t1
+d := #0
+LABEL l0 :
+d := #1
+LABEL l1 :
+f := #0
+LABEL l2 :
+f := #1
+LABEL l3 :
+p := #0
+LABEL l4 :
+p := #1
+LABEL l5 :
+RETURN a
