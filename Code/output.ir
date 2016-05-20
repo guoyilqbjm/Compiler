@@ -1,6 +1,6 @@
 FUNCTION add :
-PARAM a :
-PARAM b :
+PARAM a
+PARAM b
 t0 := a + b
 RETURN t0
 FUNCTION main :
@@ -8,10 +8,10 @@ READ t14
 x := t14
 READ t15
 y := t15
-PARAM (null) :
+PARAM (null)
 WRITE t1
 t6 := #0
-PARAM (null) :
+PARAM (null)
 t8 := x + y
 IF t7 == t8 GOTO l0
 GOTO l1
