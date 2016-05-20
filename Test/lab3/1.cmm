@@ -1,11 +1,12 @@
 int add(int a, int b) {
-	return a+b;
+	return a + b;
 }
 
 int main(){
-	int x = read();
-	int y = read();
-	write(add(x,y));
-	write(add(x,y) == (x+y));
+	int x = 1;
+	int y = 2;
+	int p = add(3, 4);
+	int q = add(x, y);
+	write(p == 2+5);
 	return 0;
 }

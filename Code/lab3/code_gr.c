@@ -206,6 +206,7 @@ InterCodes* translate_Args(TreeNode *root, ArgListNode *arg_list){
 	OperandPoint t1 = (OperandPoint)malloc(sizeof(Operand));
 	t1->kind = TEMP;
 	t1->data.temp_no = allocate_varname();
+
 	InterCodes *code1 = translate_Exp(child, t1);
 
 	ArgListNode *new_arg_node = (ArgListNode *)malloc(sizeof(ArgListNode));
@@ -229,7 +230,6 @@ InterCodes* translate_Exp(TreeNode *root, OperandPoint place){
 	InterCodes *new_code = (InterCodes *)malloc(sizeof(InterCodes));
 	new_code->last = new_code->next = NULL;
 	if (child->name == LP) {
-
 		return translate_Exp(child->nextSibling, place);
 	}
 	else if (child->name == INT){
@@ -272,7 +272,46 @@ InterCodes* translate_Exp(TreeNode *root, OperandPoint place){
 					return mergeInterCodes(code1, new_code);
 				}
 				else {
-					// FIXME!
+					ArgListNode *arg_node = arg_list->next;
+					InterCodes *code2 = NULL;
+					while (arg_node != NULL) {
+						InterCodes *code_arg = (InterCodes *)malloc(sizeof(InterCodes));
+						code_arg->last = code_arg->next = NULL;
+						code_arg->code.kind = ARG;
+						if (arg_node->operand_point->kind == TEMP) {
+							code_arg->code.data.symbol_name = get_temp_varname(arg_node->operand_point->data.temp_no);
+						}
+						else if (arg_node->operand_point->kind == VARIABLE) {
+							code_arg->code.data.symbol_name = arg_node->operand_point->data.var_name;
+						}
+						else {
+							assert(0);
+						}
+						code2 = mergeInterCodes(code2, code_arg);
+						arg_node = arg_node->next;
+					}
+
+					// arg_node = arg_list->next;
+					// while (arg_node != NULL) {
+					// 	printf("%d\n", arg_node->operand_point->kind);
+					// 	arg_node = arg_node->next;
+					// }
+
+					InterCodes *code_temp = (InterCodes *)malloc(sizeof(InterCodes));
+					code_temp->last = code_temp->next = NULL;
+					code_temp->code.kind = CALL;
+					code_temp->code.data.funcall.left = new_temp;
+					//printf("new_temp == null %d\n", new_temp == NULL);
+					code_temp->code.data.funcall.fun_name = child->data;
+
+					InterCodes *code3 = (InterCodes*)malloc(sizeof(InterCodes));
+					code3->last = code3->next = NULL;
+					code3->code.kind = ONEOP;
+					code3->code.data.oneop.left = place;
+					//printf("place == null %d\n", place == NULL);
+					code3->code.data.oneop.right = new_temp;
+					code3 = mergeInterCodes(code_temp, code3);
+					return mergeInterCodes(mergeInterCodes(code1, code2), code3);
 				}
 			}
 			else {							// Exp -> ID LP RP
@@ -314,7 +353,6 @@ InterCodes* translate_Exp(TreeNode *root, OperandPoint place){
 		return mergeInterCodes(code1,code2);
 	}
 	else if (child->name == NOT || operator->name == AND || operator->name == OR || operator->name == RELOP) {
-		printf("i am here %s %d\n",__FILE__,__LINE__);
 		InterCodes *label1 = (InterCodes *)malloc(sizeof(InterCodes));
 		InterCodes *label2 = (InterCodes *)malloc(sizeof(InterCodes));
 		label1->last = label1->next = label2->last = label2->next = NULL;
@@ -332,7 +370,6 @@ InterCodes* translate_Exp(TreeNode *root, OperandPoint place){
 		code0->code.data.oneop.right = op1;
 
 		InterCodes *code1 = translate_Cond(root, label1, label2);
-		printf("hh\n");
 
 		OperandPoint op2 = (OperandPoint)malloc(sizeof(Operand));
 		op2->kind = CONSTANT;
@@ -377,8 +414,7 @@ InterCodes* translate_Cond(TreeNode *exp, InterCodes *label_true, InterCodes *la
 	TreeNode *operator = child->nextSibling;
 	// InterCodes *new_code = (InterCodes *)malloc(sizeof(InterCodes));
 	// new_code->last = new_code->next = NULL;
-	assert(label_true->last == NULL && label_true->next == NULL && label_false->last == NULL && label_false->next == NULL);
-	printf("translate_Cond\n");
+	//assert(label_true->last == NULL && label_true->next == NULL && label_false->last == NULL && label_false->next == NULL);
 	if (operator != NULL) {
 		if (child->name == NOT) {
 			return translate_Cond(child->nextSibling, label_false, label_true);
