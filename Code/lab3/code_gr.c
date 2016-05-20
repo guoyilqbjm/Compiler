@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
-
+#include "../lab2/rules.h"
 int varIndex=-1, labelIndex=-1;
 char VARNAME[100][4], LABELNAME[100][4];
 
@@ -44,6 +44,35 @@ char* allocate_labelname(){
 		label[2] = '\0';
 	}
 	return LABELNAME[labelIndex];
+}
+
+int get_structure_size(TypePoint type){
+	assert(type->kind == STRUCTURE);
+	assert(type->data.structure->type->kind == STRUCTURE);
+	int size = 0;
+	FieldListPoint head = type->data.structure->type->data.structure;
+	for(;head != NULL; head=head->tail){
+		assert(head->type->kind == BASIC || head->type->kind == STRUCTURE);
+		if(head->type->kind == BASIC)
+			size = size + 4;
+		else
+			size = size + get_structure_size(head->type);
+	}
+	return size;
+}
+
+int get_structure_offset(TypePoint type,char *fieldname){
+	assert(type->kind == STRUCTURE);
+	int offset = 0;
+	FieldListPoint head = type->data.structure->type->data.structure;
+	for(;strcmp(head->name,fieldname)!=0;head=head->tail){
+		assert(head != NULL);
+		if(head->type->kind == BASIC)
+			offset = offset + 4;
+		else
+			offset = offset + get_structure_size(head->type);
+	}
+	return offset;
 }
 
 void runCode(char *filename){
@@ -131,10 +160,13 @@ InterCodes *translate_DefList(TreeNode *root){
 	while(1){
 		TreeNode *dec = def->firstChild->nextSibling->firstChild;// Def -> Specifier DecList SEMI
 																// DecList->Dec | Dec COMMA DecList dec->name = Dec
+		TreeNode *specifier = def->firstChild;
+		TypePoint type = getSpecifier(specifier);
+
 		while(1){
+			assert(!(type->kind == STRUCTURE && dec->firstChild->nextSibling != NULL));	//不存在结构体类型的初始化操作
 			TreeNode* vardec = dec->firstChild;	//Dec->VarDec | VarDec ASSIGNOP Exp
 			if(vardec->nextSibling != NULL){	//VarDec -> ID | VarDec LB INT RB
-
 				OperandPoint place = (OperandPoint)malloc(sizeof(Operand));
 				place->kind = VARIABLE;
 				place->data.var_name = vardec->firstChild->data;
@@ -142,7 +174,23 @@ InterCodes *translate_DefList(TreeNode *root){
 				result = mergeInterCodes(result,temp_codes);
 			}
 			else if(vardec->firstChild->name != ID){
+				//我们不需要实现数组的定义
+				printf("Never reach here in %s at %d.\n",__FILE__,__LINE__);
 				// TODO: array definiton / allocate memory
+			}
+			else if(type->kind == STRUCTURE){
+				int size = get_structure_size(type);
+				InterCodes* code1 = (InterCodes*)malloc(sizeof(InterCodes));
+				code1->last = code1->next = NULL;
+				OperandPoint var = (OperandPoint)malloc(sizeof(Operand));
+				var->kind = VARIABLE;
+				assert(vardec->firstChild->name == ID);
+
+				var->data.var_name = vardec->firstChild->data;
+				code1->code.kind = DEC;
+				code1->code.data.decstmt.left = var;
+				code1->code.data.decstmt.size = size;
+				result = mergeInterCodes(result,code1);
 			}
 			if(dec->nextSibling == NULL)
 				break;	
