@@ -1,0 +1,32 @@
+FUNCTION add :
+PARAM a
+PARAM b
+t0 := a + b
+RETURN t0
+
+FUNCTION main :
+x := #1
+y := #2
+t7 := #3
+t8 := #4
+ARG t8
+ARG t7
+t6 := CALL add
+p := t6
+ARG y
+ARG x
+t9 := CALL add
+q := t9
+t1 := #0
+t4 := #2
+t5 := #5
+t3 := t4 + t5
+IF p == t3 GOTO l0
+GOTO l1
+LABEL l0 :
+t1 := #1
+LABEL l1 :
+WRITE t1
+t0 := #0
+RETURN t0
+
