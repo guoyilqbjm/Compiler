@@ -3,11 +3,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 struct Operand{
-	enum {TEMP, VARIABLE, CONSTANT, ADDRESS} kind;
+	enum {TEMP, VARIABLE, CONSTANT, ADDRESS,REFERENCE} kind;
 	union{
 		int temp_no;//address 存储生成的临时变量的编号，调用int new_temp_varname();可生成临时变量序号，调用char *get_temp_varname(int i);可获取临时便利的名字
 		char *var_name;//程序中定义的变量名，可以直接使var_name指向类型为ID的树节点的data即可。
 		char *value;//常量值
+		char *refer_name;
 		/* 关于地址 或者引用的存储未考虑 你自己设计一下了*/
 	} data;
 };
@@ -21,6 +22,7 @@ struct InterCode{
 		char *symbol_name;
 		OperandPoint operand_point;
 		OperandPoint return_value;//存储return返回值
+		OperandPoint arg_value;//
 		struct{ OperandPoint left; char *fun_name;} funcall;
 		struct{ OperandPoint left; int size;} decstmt;
 		struct{ OperandPoint left, right;} oneop;

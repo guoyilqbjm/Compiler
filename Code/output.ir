@@ -1,5 +1,14 @@
 FUNCTION main :
-DEC t 16
-t0 := #0
-RETURN t0
+DEC x 8
+t0 := &x + #0
+*t0 := #1
+t2 := &x + #4
+t6 := &x + #0
+READ t7
+t5 := t7
+t3 := *t6 + t5
+*t2 := t3
+t: := &x + #4
+WRITE *t:
+RETURN #0
 

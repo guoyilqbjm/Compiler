@@ -18,7 +18,16 @@ char *getOperandName(OperandPoint p){
 			strcpy(&(data[1]),p->data.value);
 			data[0] = '#';
 			return data;
-		case ADDRESS:printf("Don't finish Address %s %d.\n",__FILE__,__LINE__);break;
+		case ADDRESS:
+			data = (char *)malloc(32);
+			data[0] = '*';
+			strcpy(&(data[1]),get_temp_varname(p->data.temp_no));
+			return data;
+		case REFERENCE:
+			data = (char *)malloc(32);
+			data[0] = '&';
+			strcpy(&(data[1]),p->data.refer_name);
+			return data;
 		default:printf("Wrong in getOperandName()！\n");return NULL;
 	}
 }
@@ -39,6 +48,9 @@ OperandPoint mallocOperand(int kind,...){
 	}
 	else if(kind == ADDRESS)
 		op->data.temp_no = va_arg(arg, int);
+	else if(kind == REFERENCE){
+		op->data.refer_name = va_arg(arg,char *);
+	}
 	else
 		printf("Dont't finish in %s at %d.\n",__FILE__,__LINE__);
 	va_end(arg);
@@ -82,7 +94,7 @@ void printInterCodes(char *filename){
 				fprintf(fp,"RETURN %s\n\n",getOperandName(p->code.data.return_value));
 				break;
 			case ARG:
-				fprintf(fp,"ARG %s\n",p->code.data.symbol_name);
+				fprintf(fp,"ARG %s\n",getOperandName(p->code.data.arg_value));
 				break;
 			case ONEOP:
 				fprintf(fp,"%s := %s\n",getOperandName(p->code.data.oneop.left),getOperandName(p->code.data.oneop.right));

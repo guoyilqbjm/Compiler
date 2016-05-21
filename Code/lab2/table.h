@@ -7,6 +7,7 @@ struct TableNode{
 	char name[32];
 	TypePoint type;
 	int def_state;
+	int is_arg;
 	struct TableNode* next;
 };
 typedef struct TableNode TableNode;

@@ -134,7 +134,7 @@ InterCodes* translate_FunDec(TreeNode *root){
 
 			temp_code->code.kind = PARAM;
 			temp_code->code.data.symbol_name = tempnode->data;
-			
+			findTableNode(tempnode->data)->is_arg = 1;
 			child = child->nextSibling;
 			if (child == NULL)
 				break;
@@ -180,13 +180,12 @@ InterCodes *translate_DefList(TreeNode *root){
 			}
 			else if(type->kind == STRUCTURE){
 				int size = get_structure_size(type);
-				InterCodes* code1 = (InterCodes*)malloc(sizeof(InterCodes));
-				code1->last = code1->next = NULL;
+				InterCodes* code1 = mallocInterCodes();
 				OperandPoint var = (OperandPoint)malloc(sizeof(Operand));
 				var->kind = VARIABLE;
 				assert(vardec->firstChild->name == ID);
-
 				var->data.var_name = vardec->firstChild->data;
+				findTableNode(var->data.var_name)->is_arg = 0;
 				code1->code.kind = DEC;
 				code1->code.data.decstmt.left = var;
 				code1->code.data.decstmt.size = size;
@@ -285,12 +284,15 @@ InterCodes* translate_Exp(TreeNode *root, OperandPoint place){
 		return translate_Exp(child->nextSibling, place);
 	}
 	else if (child->name == INT){
-		new_code->code.kind = ONEOP;
+		/*new_code->code.kind = ONEOP;
 		new_code->code.data.oneop.left = place;
 		OperandPoint right = (OperandPoint)malloc(sizeof(Operand));
 		right->kind = CONSTANT;
 		right->data.value = child->data;
-		new_code->code.data.oneop.right = right;
+		new_code->code.data.oneop.right = right;*/
+		place->kind = CONSTANT;
+		place->data.value = child->data;
+		return NULL;
 	}
 	else if(child->name == FLOAT) {
 		new_code->code.kind = ONEOP;
@@ -303,8 +305,16 @@ InterCodes* translate_Exp(TreeNode *root, OperandPoint place){
 	//  Exp -> ID LP Args RP | ID LP RP | ID
 	else if(child->name == ID){
 		if (child->nextSibling == NULL) {
-			place->kind = VARIABLE;
-			place->data.var_name = child->data;
+			TableNode *table = findTableNode(child->data);
+			if(table->type->kind != BASIC && table->is_arg == 0){//is not an argument, should use its reference.
+				place->kind = REFERENCE;
+				place->data.refer_name = child->data;
+			}
+			else{
+				place->kind = VARIABLE;
+				place->data.var_name = child->data;
+				
+			}
 			return NULL;
 		}
 		else {
@@ -330,15 +340,20 @@ InterCodes* translate_Exp(TreeNode *root, OperandPoint place){
 						InterCodes *code_arg = (InterCodes *)malloc(sizeof(InterCodes));
 						code_arg->last = code_arg->next = NULL;
 						code_arg->code.kind = ARG;
-						if (arg_node->operand_point->kind == TEMP) {
+						/*if (arg_node->operand_point->kind == TEMP) {
 							code_arg->code.data.symbol_name = get_temp_varname(arg_node->operand_point->data.temp_no);
 						}
 						else if (arg_node->operand_point->kind == VARIABLE) {
 							code_arg->code.data.symbol_name = arg_node->operand_point->data.var_name;
 						}
-						else {
+						else if(arg_node->operand_point->kind == REFERENCE){
+							code_arg->code.data.symbol_name = arg_node->operand_point->data.refer_name;
+						}
+						else{
 							assert(0);
 						}
+						*/
+						code_arg->code.data.arg_value = arg_node->operand_point;
 						code2 = mergeInterCodes(code2, code_arg);
 						arg_node = arg_node->next;
 					}
@@ -456,33 +471,53 @@ InterCodes* translate_Exp(TreeNode *root, OperandPoint place){
 	}
 	else if(operator->name == DOT){
 		OperandPoint t1 = (OperandPoint)malloc(sizeof(Operand));
-		InterCodes *code1 = NULL;
-		code1 = translate_Exp(child, t1);
+		InterCodes* code1 = translate_Exp(child, t1);
 		TypePoint type = getExp(child);
+		int offset = get_structure_offset(type, operator->nextSibling->data);
+		printf("offset = %d %s\n",offset,operator->nextSibling->data);
 		assert(type->kind == STRUCTURE);
-		int offset = get_structure_offset(type,operator->nextSibling->data);
-		place->kind = ADDRESS;
-		place->data.temp_no = allocate_varname();
 
-		InterCodes* code2 = mallocInterCodes();
-		code2->code.kind = BINOP;
-		code2->code.data.binop.result = mallocOperand(VARIABLE, get_temp_varname(place->data.temp_no));
-		code2->code.data.binop.opkind = PLUS;
-		code2->code.data.binop.op1 = t1;
-		code2->code.data.binop.op2 = mallocOperand(CONSTANT, offset);
-		return mergeInterCodes(code1, code2);
-	}/*
-	else if(operator->name == ASSIGNOP){
-		if(child->firstChild->name == ID){
-			place->kind = VARIABLE;
-			place->data.var_name = child->firstChild->data;
-			InterCodes *code1 = translate_Exp(operator->nextSibling,place);
+		if(code1 == NULL){//child->firstChild->name == ID 
+			place->kind = ADDRESS;
+			place->data.temp_no = allocate_varname();
+			printf("place->name = %s\n",get_temp_varname(place->data.temp_no));
+			code1 = mallocInterCodes();
+			code1->code.kind = BINOP;
+			code1->code.data.binop.opkind = PLUS;
+			code1->code.data.binop.result = mallocOperand(VARIABLE, get_temp_varname(place->data.temp_no));
+			code1->code.data.binop.op1 = t1;
+			code1->code.data.binop.op2 = mallocOperand(CONSTANT, offset);
 			return code1;
 		}
 		else{
-
+			InterCodes *code2 = mallocInterCodes();
+			code2->code.kind = BINOP;
+			code2->code.data.binop.opkind = PLUS;
+			code2->code.data.binop.op1 = mallocOperand(VARIABLE, get_temp_varname(place->data.temp_no));
+			code2->code.data.binop.op2 = mallocOperand(CONSTANT, offset);
+			place->data.temp_no = allocate_varname();
+			place->kind = ADDRESS;
+			code2->code.data.binop.result = mallocOperand(VARIABLE, get_temp_varname(place->data.temp_no));
+			return mergeInterCodes(code1, code2);
 		}
-	}*/
+	}
+	else if(operator->name == ASSIGNOP){
+		InterCodes* code1 = translate_Exp(child,place);
+		assert(place->kind == ADDRESS || place->kind == VARIABLE || place->kind == TEMP);
+		if(place->kind != ADDRESS){
+			InterCodes* code2 = translate_Exp(operator->nextSibling, place);
+			return mergeInterCodes(code1, code2);
+		}
+		else{
+			OperandPoint t1 = mallocOperand(TEMP,allocate_varname());
+			InterCodes* code2 = translate_Exp(operator->nextSibling, t1);
+			InterCodes *code3 = mallocInterCodes();
+			code3->code.kind = ONEOP;
+			code3->code.data.oneop.left = place;
+			code3->code.data.oneop.right = t1;
+			return mergeInterCodes(mergeInterCodes(code1, code2), code3);
+		}
+	}
 	else{
 		printf("Don't finished the Function.\n");
 		return NULL;

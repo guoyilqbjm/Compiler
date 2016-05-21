@@ -1,13 +1,11 @@
-struct test{
-	int a1;
-	float b1;
-	struct {
-		int c;
-		int d;
-	} c1;
+struct t{
+	int a;
+	int b;
 };
-
 int main(){
-	struct test t;
+	struct t x;
+	x.a = 1;
+	x.b = x.a + read();
+	write(x.b);
 	return 0;
 }
