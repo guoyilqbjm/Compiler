@@ -220,6 +220,10 @@ InterCodes *translate_StmtList(TreeNode *root){			//StmtList -> Stmt StmtList | 
 		TreeNode * node = child->firstChild;			// child = Stmt
 		if(node->name == RETURN){						// Stmt -> RETURN Exp SEMI
 			OperandPoint place = (OperandPoint)malloc(sizeof(Operand));
+			
+			place->kind = TEMP;
+			place->data.temp_no = allocate_varname();//assingn a varname for return value;
+			
 			InterCodes *expcode = translate_Exp(node->nextSibling,place);
 			result = mergeInterCodes(result,expcode);
 			InterCodes *new_code = (InterCodes*)malloc(sizeof(InterCodes));
@@ -450,6 +454,35 @@ InterCodes* translate_Exp(TreeNode *root, OperandPoint place){
 		code3->code.data.binop.op2 = t2;
 		return mergeInterCodes(mergeInterCodes(code1, code2), code3);
 	}
+	else if(operator->name == DOT){
+		OperandPoint t1 = (OperandPoint)malloc(sizeof(Operand));
+		InterCodes *code1 = NULL;
+		code1 = translate_Exp(child, t1);
+		TypePoint type = getExp(child);
+		assert(type->kind == STRUCTURE);
+		int offset = get_structure_offset(type,operator->nextSibling->data);
+		place->kind = ADDRESS;
+		place->data.temp_no = allocate_varname();
+
+		InterCodes* code2 = mallocInterCodes();
+		code2->code.kind = BINOP;
+		code2->code.data.binop.result = mallocOperand(VARIABLE, get_temp_varname(place->data.temp_no));
+		code2->code.data.binop.opkind = PLUS;
+		code2->code.data.binop.op1 = t1;
+		code2->code.data.binop.op2 = mallocOperand(CONSTANT, offset);
+		return mergeInterCodes(code1, code2);
+	}/*
+	else if(operator->name == ASSIGNOP){
+		if(child->firstChild->name == ID){
+			place->kind = VARIABLE;
+			place->data.var_name = child->firstChild->data;
+			InterCodes *code1 = translate_Exp(operator->nextSibling,place);
+			return code1;
+		}
+		else{
+
+		}
+	}*/
 	else{
 		printf("Don't finished the Function.\n");
 		return NULL;

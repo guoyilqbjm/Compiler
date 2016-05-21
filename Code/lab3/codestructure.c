@@ -2,6 +2,7 @@
 #include "code_gr.h"
 #include <stdio.h>
 #include <assert.h>
+#include <stdarg.h>
 struct InterCodes* code_root = NULL;
 struct InterCodes* code_tail = NULL;
 
@@ -22,6 +23,33 @@ char *getOperandName(OperandPoint p){
 	}
 }
 
+OperandPoint mallocOperand(int kind,...){
+	OperandPoint op = (OperandPoint)malloc(sizeof(Operand));
+	op->kind = kind;
+	va_list arg;
+	va_start(arg,kind);
+	if(kind == TEMP)
+		op->data.temp_no = va_arg(arg,int);
+	else if(kind == VARIABLE)
+		op->data.var_name = va_arg(arg,char *);
+	else if(kind == CONSTANT){
+		char *data = (char *)malloc(16);
+		sprintf(data,"%d",va_arg(arg, int));
+		op->data.value = data;
+	}
+	else if(kind == ADDRESS)
+		op->data.temp_no = va_arg(arg, int);
+	else
+		printf("Dont't finish in %s at %d.\n",__FILE__,__LINE__);
+	va_end(arg);
+	return op;
+}
+
+InterCodes* mallocInterCodes(){
+	InterCodes *code = (InterCodes*)malloc(sizeof(InterCodes));
+	code->last = code->next = NULL;
+	return code;
+}
 void printInterCodes(char *filename){
 	InterCodes *p = code_root;
 	if(p == NULL){

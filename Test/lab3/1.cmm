@@ -1,12 +1,13 @@
-int add(int a, int b) {
-	return a + b;
-}
+struct test{
+	int a1;
+	float b1;
+	struct {
+		int c;
+		int d;
+	} c1;
+};
 
 int main(){
-	int x = 1;
-	int y = 2;
-	int p = add(3, 4);
-	int q = add(x, y);
-	write(p == 2+5);
+	struct test t;
 	return 0;
 }

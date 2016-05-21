@@ -5,7 +5,7 @@
 struct Operand{
 	enum {TEMP, VARIABLE, CONSTANT, ADDRESS} kind;
 	union{
-		int temp_no;//存储生成的临时变量的编号，调用int new_temp_varname();可生成临时变量序号，调用char *get_temp_varname(int i);可获取临时便利的名字
+		int temp_no;//address 存储生成的临时变量的编号，调用int new_temp_varname();可生成临时变量序号，调用char *get_temp_varname(int i);可获取临时便利的名字
 		char *var_name;//程序中定义的变量名，可以直接使var_name指向类型为ID的树节点的data即可。
 		char *value;//常量值
 		/* 关于地址 或者引用的存储未考虑 你自己设计一下了*/
@@ -45,6 +45,9 @@ struct ArgListNode{
 	struct ArgListNode *next;
 };
 typedef struct ArgListNode ArgListNode;
+
+OperandPoint mallocOperand(int kind,...);
+InterCodes* mallocInterCodes();
 
 InterCodes* mergeInterCodes(InterCodes* a,InterCodes *b);//将中间代码a和b连接起来并且返回生成的新的代码的头节点指针
 

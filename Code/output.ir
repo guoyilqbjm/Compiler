@@ -1,0 +1,5 @@
+FUNCTION main :
+DEC t 16
+t0 := #0
+RETURN t0
+
