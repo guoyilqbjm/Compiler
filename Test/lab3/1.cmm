@@ -3,9 +3,7 @@ struct t{
 	int b;
 };
 int main(){
-	struct t x;
-	x.a = 1;
-	x.b = x.a + read();
-	write(x.b);
-	return 0;
+	int x[10];
+	struct t a[10];
+	a[0].a = 1;
 }

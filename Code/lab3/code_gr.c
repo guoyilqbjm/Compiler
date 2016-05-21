@@ -61,6 +61,17 @@ int get_structure_size(TypePoint type){
 	return size;
 }
 
+int get_array_size(TypePoint type){
+	assert(type->kind == ARRAY);
+	int size = 0;
+	TypePoint elem = type->data.array.elem;
+	assert(type->data.array.elem == BASIC || type->data.array.elem == STRUCTURE);
+	if(elem->kind == BASIC)
+		size = 4;
+	else
+		size = get_structure_size(elem);
+	return size * type->data.array.size;
+}
 int get_structure_offset(TypePoint type,char *fieldname){
 	assert(type->kind == STRUCTURE);
 	int offset = 0;
@@ -113,8 +124,7 @@ InterCodes *translate_Program(TreeNode *root){
 InterCodes* translate_FunDec(TreeNode *root){	
 	assert(root != NULL);
 	TreeNode *child = root->firstChild;
-	InterCodes *new_code = (InterCodes*)malloc(sizeof(InterCodes));
-	new_code->last = new_code->next = NULL;
+	InterCodes *new_code = mallocInterCodes();
 	new_code->code.kind = FUNCTIONLABEL;
 	new_code->code.data.symbol_name = child->data;
 	child = child->nextSibling->nextSibling;
@@ -126,15 +136,13 @@ InterCodes* translate_FunDec(TreeNode *root){
 			tempnode = tempnode->firstChild;				// VarDec -> ID | VarDec LB INT RB
 			while(tempnode->name != ID)
 				tempnode = tempnode->firstChild;
-			InterCodes *temp_code = (InterCodes*)malloc(sizeof(InterCodes));
-			temp_code->next = NULL;
+			InterCodes *temp_code = mallocInterCodes();
 			temp_code->last = tail;
 			tail->next = temp_code;
 			tail = temp_code;
-
 			temp_code->code.kind = PARAM;
 			temp_code->code.data.symbol_name = tempnode->data;
-			findTableNode(tempnode->data)->is_arg = 1;
+			findTableNode(tempnode->data)->is_arg = 1;//present variable is an argument.
 			child = child->nextSibling;
 			if (child == NULL)
 				break;
@@ -167,25 +175,21 @@ InterCodes *translate_DefList(TreeNode *root){
 			assert(!(type->kind == STRUCTURE && dec->firstChild->nextSibling != NULL));	//不存在结构体类型的初始化操作
 			TreeNode* vardec = dec->firstChild;	//Dec->VarDec | VarDec ASSIGNOP Exp
 			if(vardec->nextSibling != NULL){	//VarDec -> ID | VarDec LB INT RB
-				OperandPoint place = (OperandPoint)malloc(sizeof(Operand));
-				place->kind = VARIABLE;
-				place->data.var_name = vardec->firstChild->data;
-				InterCodes *temp_codes = translate_Exp(vardec->nextSibling->nextSibling,place);
-				result = mergeInterCodes(result,temp_codes);
+				OperandPoint place = mallocOperand(VARIABLE, vardec->firstChild->data);
+				InterCodes *temp_code = translate_Exp(vardec->nextSibling->nextSibling,place);
+				result = mergeInterCodes(result,temp_code);
 			}
 			else if(vardec->firstChild->name != ID){
 				//我们不需要实现数组的定义
-				printf("Never reach here in %s at %d.\n",__FILE__,__LINE__);
+				printf("don't finish here at %s \n",__FILE__);
 				// TODO: array definiton / allocate memory
 			}
 			else if(type->kind == STRUCTURE){
 				int size = get_structure_size(type);
 				InterCodes* code1 = mallocInterCodes();
-				OperandPoint var = (OperandPoint)malloc(sizeof(Operand));
-				var->kind = VARIABLE;
-				assert(vardec->firstChild->name == ID);
-				var->data.var_name = vardec->firstChild->data;
-				findTableNode(var->data.var_name)->is_arg = 0;
+				OperandPoint var = mallocOperand(VARIABLE, vardec->firstChild->data);
+
+				findTableNode(var->data.var_name)->is_arg = 0;//the variable is not an argument.
 				code1->code.kind = DEC;
 				code1->code.data.decstmt.left = var;
 				code1->code.data.decstmt.size = size;
@@ -240,6 +244,7 @@ InterCodes *translate_StmtList(TreeNode *root){			//StmtList -> Stmt StmtList | 
 			result = mergeInterCodes(result,translate_Exp(node, place));
 		}
 		else {
+			
 			printf("Don't finish in %s at %d.\n",__FILE__,__LINE__);
 			return NULL;
 		}
