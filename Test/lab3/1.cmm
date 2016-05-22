@@ -1,9 +1,23 @@
-struct t{
+struct test{
 	int a;
 	int b;
+	struct{
+		int d;
+		int f;
+	}c;
 };
+
+int add(struct test t){
+	return t.a * t.b + t.c.d + t.c.f;
+}
+
 int main(){
-	int x[10];
-	struct t a[10];
-	a[0].a = 1;
+	struct test x[10];
+	x[1].a = 5;
+	x[1].b = 2;
+	x[1].c.d = read();
+	x[1].c.f = read();
+	write(add(x[1]));
+
+	return 0;
 }

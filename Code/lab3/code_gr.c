@@ -156,7 +156,9 @@ InterCodes* translate_FunDec(TreeNode *root){
 
 InterCodes* translate_CompSt(TreeNode *root){
 	TreeNode *child = root->firstChild->nextSibling;
-	return mergeInterCodes(translate_DefList(child),translate_StmtList(child->nextSibling));
+	InterCodes* code1 = translate_DefList(child);
+	InterCodes* code2 = translate_StmtList(child->nextSibling);
+	return mergeInterCodes(code1, code2);
 }
 
 InterCodes *translate_DefList(TreeNode *root){
@@ -180,8 +182,23 @@ InterCodes *translate_DefList(TreeNode *root){
 				result = mergeInterCodes(result,temp_code);
 			}
 			else if(vardec->firstChild->name != ID){
+				assert(vardec->firstChild->firstChild->name == ID);
+				TreeNode* id = vardec->firstChild->firstChild;
+				TableNode *table = findTableNode(id->data);
+				assert(type->kind == BASIC || type->kind == STRUCTURE);
+				if(type->kind == BASIC)
+					table->type->data.array.offset = 4;
+				else{
+
+					table->type->data.array.offset = get_structure_size(type);
+				}
+				InterCodes *temp_code = mallocInterCodes();
+				temp_code->code.kind = DEC;
+				temp_code->code.data.decstmt.size = table->type->data.array.offset * table->type->data.array.size;
+				temp_code->code.data.decstmt.left = mallocOperand(VARIABLE, id->data);
+				result = mergeInterCodes(result, temp_code);
 				//我们不需要实现数组的定义
-				printf("don't finish here at %s \n",__FILE__);
+				//printf("don't finish here in %s at %d.\n",__FILE__,__LINE__);
 				// TODO: array definiton / allocate memory
 			}
 			else if(type->kind == STRUCTURE){
@@ -289,12 +306,6 @@ InterCodes* translate_Exp(TreeNode *root, OperandPoint place){
 		return translate_Exp(child->nextSibling, place);
 	}
 	else if (child->name == INT){
-		/*new_code->code.kind = ONEOP;
-		new_code->code.data.oneop.left = place;
-		OperandPoint right = (OperandPoint)malloc(sizeof(Operand));
-		right->kind = CONSTANT;
-		right->data.value = child->data;
-		new_code->code.data.oneop.right = right;*/
 		place->kind = CONSTANT;
 		place->data.value = child->data;
 		return NULL;
@@ -474,18 +485,15 @@ InterCodes* translate_Exp(TreeNode *root, OperandPoint place){
 		code3->code.data.binop.op2 = t2;
 		return mergeInterCodes(mergeInterCodes(code1, code2), code3);
 	}
-	else if(operator->name == DOT){
+	else if(operator->name == DOT){//Exp->Exp DOT ID
 		OperandPoint t1 = (OperandPoint)malloc(sizeof(Operand));
 		InterCodes* code1 = translate_Exp(child, t1);
 		TypePoint type = getExp(child);
 		int offset = get_structure_offset(type, operator->nextSibling->data);
-		printf("offset = %d %s\n",offset,operator->nextSibling->data);
 		assert(type->kind == STRUCTURE);
-
 		if(code1 == NULL){//child->firstChild->name == ID 
 			place->kind = ADDRESS;
 			place->data.temp_no = allocate_varname();
-			printf("place->name = %s\n",get_temp_varname(place->data.temp_no));
 			code1 = mallocInterCodes();
 			code1->code.kind = BINOP;
 			code1->code.data.binop.opkind = PLUS;
@@ -495,13 +503,14 @@ InterCodes* translate_Exp(TreeNode *root, OperandPoint place){
 			return code1;
 		}
 		else{
+			assert(t1->kind == ADDRESS);
 			InterCodes *code2 = mallocInterCodes();
 			code2->code.kind = BINOP;
 			code2->code.data.binop.opkind = PLUS;
-			code2->code.data.binop.op1 = mallocOperand(VARIABLE, get_temp_varname(place->data.temp_no));
-			code2->code.data.binop.op2 = mallocOperand(CONSTANT, offset);
 			place->data.temp_no = allocate_varname();
 			place->kind = ADDRESS;
+			code2->code.data.binop.op1 = mallocOperand(VARIABLE, get_temp_varname(t1->data.temp_no));
+			code2->code.data.binop.op2 = mallocOperand(CONSTANT, offset);
 			code2->code.data.binop.result = mallocOperand(VARIABLE, get_temp_varname(place->data.temp_no));
 			return mergeInterCodes(code1, code2);
 		}
@@ -523,6 +532,42 @@ InterCodes* translate_Exp(TreeNode *root, OperandPoint place){
 			return mergeInterCodes(mergeInterCodes(code1, code2), code3);
 		}
 	}
+	else if(child->name == Exp && operator->name == LB){
+		TreeNode* id = child->firstChild;
+		assert(id->name == ID);
+		OperandPoint t1 = NULL;
+		InterCodes* code1 = NULL;
+		if(operator->nextSibling->firstChild->name == INT){
+			t1 = mallocOperand(CONSTANT, atoi(operator->nextSibling->firstChild->data));
+		}
+		else{
+			t1 = mallocOperand(TEMP, allocate_varname());
+			code1 = translate_Exp(operator->nextSibling, t1);
+		}
+
+		OperandPoint left = (OperandPoint)malloc(sizeof(Operand));
+		assert(translate_Exp(child, left) == NULL);
+		InterCodes *offset_code = mallocInterCodes();
+		offset_code->code.kind = BINOP;
+		offset_code->code.data.binop.opkind = STAR;
+		offset_code->code.data.binop.op1 = t1;
+		TableNode *table = findTableNode(id->data);
+		assert(table->type->kind == ARRAY);
+		
+		offset_code->code.data.binop.op2 = mallocOperand(CONSTANT, table->type->data.array.offset);
+		OperandPoint temp = mallocOperand(TEMP, allocate_varname());
+		offset_code->code.data.binop.result = temp;
+
+		InterCodes *code2 = mallocInterCodes();
+		code2->code.kind = BINOP;
+		code2->code.data.binop.opkind = PLUS;
+		code2->code.data.binop.op1 = left;
+		code2->code.data.binop.op2 = temp;
+		place->kind = ADDRESS;
+		place->data.temp_no = allocate_varname();
+		code2->code.data.binop.result = mallocOperand(VARIABLE, get_temp_varname(place->data.temp_no));
+		return mergeInterCodes(mergeInterCodes(code1, offset_code), code2);
+	}
 	else{
 		printf("Don't finished the Function.\n");
 		return NULL;
@@ -535,7 +580,7 @@ InterCodes* translate_Cond(TreeNode *exp, InterCodes *label_true, InterCodes *la
 	TreeNode *operator = child->nextSibling;
 	// InterCodes *new_code = (InterCodes *)malloc(sizeof(InterCodes));
 	// new_code->last = new_code->next = NULL;
-	//assert(label_true->last == NULL && label_true->next == NULL && label_false->last == NULL && label_false->next == NULL);
+	//assert(label_true->last == NULL && label_true->next == NULL && label_false->last == NULL && label_false->next == NULL);afffasdfsdfaf sfa DSFS
 	if (operator != NULL) {
 		if (child->name == NOT) {
 			return translate_Cond(child->nextSibling, label_false, label_true);

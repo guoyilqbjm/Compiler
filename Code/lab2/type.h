@@ -13,7 +13,7 @@ struct Type{
 	enum {BASIC, ARRAY,STRUCTURE,FUNCTION} kind;
 	union{
 		int basic;		//base type
-		struct {struct Type* elem; int size;} array; //array type is consisted of the element type and the array size.
+		struct {struct Type* elem; int size;int offset;} array; //array type is consisted of the element type and the array size.
 		struct FieldList* structure;		//strcture and function type is a link.
 	} data;
 };

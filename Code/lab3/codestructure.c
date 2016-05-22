@@ -94,7 +94,11 @@ void printInterCodes(char *filename){
 				fprintf(fp,"RETURN %s\n\n",getOperandName(p->code.data.return_value));
 				break;
 			case ARG:
-				fprintf(fp,"ARG %s\n",getOperandName(p->code.data.arg_value));
+				fprintf(fp,"ARG ");
+				if(p->code.data.arg_value->kind == ADDRESS)
+					fprintf(fp,"%s\n",get_temp_varname(p->code.data.arg_value->data.temp_no));
+				else
+					fprintf(fp,"%s\n",getOperandName(p->code.data.arg_value));
 				break;
 			case ONEOP:
 				fprintf(fp,"%s := %s\n",getOperandName(p->code.data.oneop.left),getOperandName(p->code.data.oneop.right));
