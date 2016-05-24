@@ -17,6 +17,7 @@ InterCodes* translate_FunDec(TreeNode *root);
 InterCodes* translate_CompSt(TreeNode *root);
 InterCodes* translate_Program(TreeNode *root);
 InterCodes* translate_StmtList(TreeNode *root);//To-do
+InterCodes* translate_Stmt(TreeNode *root);
 InterCodes* translate_Cond(TreeNode *exp, InterCodes *label_true, InterCodes *label_false);
 void runCode(char *filename);
 #endif

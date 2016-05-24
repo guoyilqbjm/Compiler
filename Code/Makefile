@@ -18,6 +18,7 @@ LFO = $(LFC:.c=.o)
 YFO = $(YFC:.c=.o)
 TEMPFILE = $(shell find ./ -name "*~")
 SWPFILE = $(shell find ./ -name "*.swp")
+IRFILE = $(shell find ./ -name "*.ir")
 parser: syntax $(filter-out $(LFO),$(OBJS))
 	$(CC) -o parser $(filter-out $(LFO),$(OBJS)) -lfl -ly
 TestFile = "../Test/lab3/1.cmm"
@@ -45,3 +46,4 @@ clean:
 	#rm -f	lab2/*.o 
 	rm -f $(TEMPFILE) 
 	rm -f $(SWPFILE)
+	rm -rf $(IRFILE)

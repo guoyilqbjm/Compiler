@@ -65,7 +65,7 @@ int get_array_size(TypePoint type){
 	assert(type->kind == ARRAY);
 	int size = 0;
 	TypePoint elem = type->data.array.elem;
-	assert(type->data.array.elem == BASIC || type->data.array.elem == STRUCTURE);
+	assert(type->data.array.elem == BASIC || type->data.array.elem->kind == STRUCTURE);
 	if(elem->kind == BASIC)
 		size = 4;
 	else
@@ -225,49 +225,111 @@ InterCodes *translate_DefList(TreeNode *root){
 	return result;
 }
 
-
-InterCodes *translate_StmtList(TreeNode *root){			//StmtList -> Stmt StmtList | empty
-
-	if(root == NULL || root->name == Empty)
+InterCodes *translate_StmtList(TreeNode *root){//StmtList -> Stmt StmtList | empty
+	if(root == NULL || root->name == Empty){
 		return NULL;
+	}
+	else{
+		TreeNode *stmt = root->firstChild;
+		return mergeInterCodes(translate_Stmt(stmt), translate_StmtList(stmt->nextSibling));
+	}
+}
 
-	TreeNode *child = root->firstChild;
+
+InterCodes *translate_Stmt(TreeNode *root){			
 
 	InterCodes *result = NULL;
-	while(1){
-		if(child == NULL || child->name == Empty)
-			break;
-		TreeNode * node = child->firstChild;			// child = Stmt
-		if(node->name == RETURN){						// Stmt -> RETURN Exp SEMI
-			OperandPoint place = (OperandPoint)malloc(sizeof(Operand));
+	TreeNode * node = root->firstChild;			// root = Stmt
+	if(node->name == RETURN){						// Stmt -> RETURN Exp SEMI
+		OperandPoint place = (OperandPoint)malloc(sizeof(Operand));
+		place->kind = TEMP;
+		place->data.temp_no = allocate_varname();//assingn a varname for return value;
 			
-			place->kind = TEMP;
-			place->data.temp_no = allocate_varname();//assingn a varname for return value;
-			
-			InterCodes *expcode = translate_Exp(node->nextSibling,place);
-			result = mergeInterCodes(result,expcode);
-			InterCodes *new_code = (InterCodes*)malloc(sizeof(InterCodes));
-			new_code->next = new_code->last = NULL;
-			new_code->code.kind = RETURNFUNCTION;
-			new_code->code.data.return_value = place;
-			result = mergeInterCodes(result,new_code);
-		}
-		else if(node->name == CompSt){					// Stmt -> CompSt
-
-			result = mergeInterCodes(result,translate_CompSt(node));
-		}
-		else if(node->name == Exp){						//Stmt -> Exp SEMI
-			OperandPoint place = (OperandPoint)malloc(sizeof(Operand));
-			result = mergeInterCodes(result,translate_Exp(node, place));
-		}
-		else {
-			
-			printf("Don't finish in %s at %d.\n",__FILE__,__LINE__);
-			return NULL;
-		}
-		child = child->nextSibling->firstChild;
+		InterCodes *expcode = translate_Exp(node->nextSibling,place);
+		InterCodes *new_code = (InterCodes*)malloc(sizeof(InterCodes));
+		new_code->next = new_code->last = NULL;
+		new_code->code.kind = RETURNFUNCTION;
+		new_code->code.data.return_value = place;
+		result = mergeInterCodes(expcode,new_code);
 	}
-	/*To-do*/
+	else if(node->name == CompSt){					// Stmt -> CompSt
+		result = translate_CompSt(node);
+	}
+	else if(node->name == Exp){						//Stmt -> Exp SEMI
+		OperandPoint place = (OperandPoint)malloc(sizeof(Operand));
+		result = translate_Exp(node, place);
+	}
+	else if(node->name == IF){
+		InterCodes *label1 = mallocInterCodes();
+		label1->code.kind = LABEL;
+		label1->code.data.symbol_name = allocate_labelname();
+
+		InterCodes *label2 = mallocInterCodes();
+		label2->code.kind = LABEL;
+		label2->code.data.symbol_name = allocate_labelname();
+
+		TreeNode *exp = node->nextSibling->nextSibling;
+		TreeNode *stmt1 = exp->nextSibling->nextSibling;
+		InterCodes *code1 = translate_Cond(exp, label1, label2);
+		InterCodes *code2 = translate_Stmt(stmt1);
+		if(stmt1->nextSibling == NULL){
+			//return code1 + [LABEL label1] + code2 + [LABEL label2]
+			result = mergeInterCodes(code1, label1);
+			result = mergeInterCodes(result, code2);
+			result = mergeInterCodes(result, label2);
+		}
+		else{
+			TreeNode *stmt2 = stmt1->nextSibling->nextSibling;
+			InterCodes *label3 = mallocInterCodes();
+			label3->code.kind = LABEL;
+			label3->code.data.symbol_name = allocate_labelname();
+			printf("here!\n");
+			InterCodes *code3 = translate_Stmt(stmt2);
+			InterCodes *goto_code = mallocInterCodes();
+			goto_code->code.kind = GOTO;
+			goto_code->code.data.symbol_name = label3->code.data.symbol_name;
+			//return code1 + [LABEL label1] + code2 + [GOTO label3] + [LABEL label2] + code3 + [LABEL label3]
+			result = mergeInterCodes(code1, label1);
+			result = mergeInterCodes(result, code2);
+			result = mergeInterCodes(result, goto_code);
+			result = mergeInterCodes(result, label2);
+			result = mergeInterCodes(result, code3);
+			result = mergeInterCodes(result, label3);
+		}
+	}
+	else if(node->name == WHILE){
+		InterCodes *label1 = mallocInterCodes();
+		label1->code.kind = LABEL;
+		label1->code.data.symbol_name = allocate_labelname();
+
+		InterCodes *label2 = mallocInterCodes();
+		label2->code.kind = LABEL;
+		label2->code.data.symbol_name = allocate_labelname();
+
+		InterCodes *label3 = mallocInterCodes();
+		label3->code.kind = LABEL;
+		label3->code.data.symbol_name = allocate_labelname();
+
+		TreeNode *exp = node->nextSibling->nextSibling;
+		InterCodes *code1 = translate_Cond(exp, label2, label3);
+		InterCodes *code2 = translate_Stmt(exp->nextSibling->nextSibling);
+
+		InterCodes *goto_code = mallocInterCodes();
+		goto_code->code.kind = GOTO;
+		goto_code->code.data.symbol_name = label1->code.data.symbol_name;
+
+		//return [LABEL label1] + code1 + [LABEL label2] + code2 + [GOTO label1] + [LABEL label3]
+		result = mergeInterCodes(label1, code1);
+		result = mergeInterCodes(result, label2);
+		result = mergeInterCodes(result, code2);
+		result = mergeInterCodes(result, goto_code);
+		result = mergeInterCodes(result, label3);
+	}
+	else{
+		
+		printf("Don't finish in %s at %d.\n",__FILE__,__LINE__);
+		return NULL;
+	}
 	return result;
 }
 
@@ -306,9 +368,14 @@ InterCodes* translate_Exp(TreeNode *root, OperandPoint place){
 		return translate_Exp(child->nextSibling, place);
 	}
 	else if (child->name == INT){
-		place->kind = CONSTANT;
-		place->data.value = child->data;
-		return NULL;
+		
+		InterCodes *code = mallocInterCodes();
+		code->code.kind = ONEOP;
+		OperandPoint right = mallocOperand(CONSTANT, 0);
+		right->data.value = child->data;
+		code->code.data.oneop.right = right;
+		code->code.data.oneop.left = place;
+		return code;
 	}
 	else if(child->name == FLOAT) {
 		new_code->code.kind = ONEOP;
