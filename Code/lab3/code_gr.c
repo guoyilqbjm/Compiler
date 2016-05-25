@@ -441,12 +441,6 @@ InterCodes* translate_Exp(TreeNode *root, OperandPoint place){
 						arg_node = arg_node->next;
 					}
 
-					// arg_node = arg_list->next;
-					// while (arg_node != NULL) {
-					// 	printf("%d\n", arg_node->operand_point->kind);
-					// 	arg_node = arg_node->next;
-					// }
-
 					InterCodes *code_temp = (InterCodes *)malloc(sizeof(InterCodes));
 					code_temp->last = code_temp->next = NULL;
 					code_temp->code.kind = CALL;

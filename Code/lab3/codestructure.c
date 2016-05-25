@@ -62,6 +62,7 @@ InterCodes* mallocInterCodes(){
 	code->last = code->next = NULL;
 	return code;
 }
+
 void printInterCodes(char *filename){
 	InterCodes *p = code_root;
 	if(p == NULL){

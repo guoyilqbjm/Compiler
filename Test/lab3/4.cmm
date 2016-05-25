@@ -1,0 +1,18 @@
+int add(int a, int b) {
+	return a+b;
+}
+
+struct Node {
+	int p;
+	int q;
+};
+
+int main() {
+	int arr[2];
+	int m,n;
+	struct Node node;
+	node.p=1;
+	node.q=2;
+	write(add(node.p, node.q));
+	return 0;
+}

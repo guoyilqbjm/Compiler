@@ -21,7 +21,7 @@ SWPFILE = $(shell find ./ -name "*.swp")
 IRFILE = $(shell find ./ -name "*.ir")
 parser: syntax $(filter-out $(LFO),$(OBJS))
 	$(CC) -o parser $(filter-out $(LFO),$(OBJS)) -lfl -ly
-TestFile = "../Test/lab3/1.cmm"
+TestFile = "../Test/lab3/4.cmm"
 syntax: lexical syntax-c
 	$(CC) -c $(YFC) -o $(YFO)
 
