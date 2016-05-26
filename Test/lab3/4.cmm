@@ -1,8 +1,7 @@
 int main(){
-	int a = 3*5+read()*20;
-	int m ;
-	m = a;
-	write(m);
-	write(m*a);
+	int a[10];
+	a[2] = 10 * 5 /2;
+	a[3] = a[2] * a[2];
+	write(a[3]);
 	return 0;
 }
