@@ -1,7 +1,9 @@
 int main(){
 	int a[10];
+	int m;
 	a[2] = 10 * 5 /2;
 	a[3] = a[2] * a[2];
-	write(a[3]);
+	m = a[3];
+	write(m);
 	return 0;
 }

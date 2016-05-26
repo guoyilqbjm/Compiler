@@ -46,17 +46,35 @@ char* allocate_labelname(){
 	return LABELNAME[labelIndex];
 }
 
+int getSize(TypePoint t){
+	if(t->kind == BASIC)
+		return 4;
+	else if(t->kind == STRUCTURE)
+		return get_structure_size(t);
+	else if(t->kind == ARRAY){
+		return t->data.array.size*getSize(t->data.array.elem);
+	}
+	else{
+		printf("don't finished!\n");
+		return 0;
+	}
+}
+
+
 int get_structure_size(TypePoint type){
 	assert(type->kind == STRUCTURE);
 	assert(type->data.structure->type->kind == STRUCTURE);
 	int size = 0;
 	FieldListPoint head = type->data.structure->type->data.structure;
 	for(;head != NULL; head=head->tail){
-		assert(head->type->kind == BASIC || head->type->kind == STRUCTURE);
+		assert(head->type->kind == BASIC || head->type->kind == STRUCTURE || head->type->kind == ARRAY);
 		if(head->type->kind == BASIC)
 			size = size + 4;
-		else
+		else if (head->type->kind == STRUCTURE)
 			size = size + get_structure_size(head->type);
+		else if (head->type->kind == ARRAY) {
+			size = getSize(head->type) + size;
+		}
 	}
 	return size;
 }
