@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 struct Operand{
-	enum {TEMP, VARIABLE, CONSTANT, ADDRESS,REFERENCE} kind;
+	enum {TEMP, VARIABLE, CONSTANT, ADDRESS, REFERENCE, STRUCTADDRESS} kind;
 	union{
 		int temp_no;//address 存储生成的临时变量的编号，调用int new_temp_varname();可生成临时变量序号，调用char *get_temp_varname(int i);可获取临时便利的名字
 		char *var_name;//程序中定义的变量名，可以直接使var_name指向类型为ID的树节点的data即可。

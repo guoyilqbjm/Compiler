@@ -1,18 +1,8 @@
-int add(int a, int b) {
-	return a+b;
-}
-
-struct Node {
-	int p;
-	int q;
-};
-
-int main() {
-	int arr[2];
-	int m,n;
-	struct Node node;
-	node.p=1;
-	node.q=2;
-	write(add(node.p, node.q));
+int main(){
+	int a = 3*5+read()*20;
+	int m ;
+	m = a;
+	write(m);
+	write(m*a);
 	return 0;
 }

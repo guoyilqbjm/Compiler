@@ -176,10 +176,15 @@ InterCodes *translate_DefList(TreeNode *root){
 		while(1){
 			assert(!(type->kind == STRUCTURE && dec->firstChild->nextSibling != NULL));	//不存在结构体类型的初始化操作
 			TreeNode* vardec = dec->firstChild;	//Dec->VarDec | VarDec ASSIGNOP Exp
-			if(vardec->nextSibling != NULL){	//VarDec -> ID | VarDec LB INT RB
+			if(vardec->nextSibling != NULL){	//Dec->VarDec ASSIGNOP Exp
 				OperandPoint place = mallocOperand(VARIABLE, vardec->firstChild->data);
-				InterCodes *temp_code = translate_Exp(vardec->nextSibling->nextSibling,place);
-				result = mergeInterCodes(result,temp_code);
+				OperandPoint t1 = (OperandPoint)malloc(sizeof(Operand));
+				InterCodes *temp_code = translate_Exp(vardec->nextSibling->nextSibling,t1);
+				InterCodes *code2 = mallocInterCodes();
+				code2->code.kind = ONEOP;
+				code2->code.data.oneop.left = place;
+				code2->code.data.oneop.right = t1;
+				result = mergeInterCodes(mergeInterCodes(result,temp_code), code2);
 			}
 			else if(vardec->firstChild->name != ID){
 				assert(vardec->firstChild->firstChild->name == ID);
@@ -369,13 +374,17 @@ InterCodes* translate_Exp(TreeNode *root, OperandPoint place){
 	}
 	else if (child->name == INT){
 		
-		InterCodes *code = mallocInterCodes();
+		/*InterCodes *code = mallocInterCodes();
 		code->code.kind = ONEOP;
 		OperandPoint right = mallocOperand(CONSTANT, 0);
 		right->data.value = child->data;
 		code->code.data.oneop.right = right;
 		code->code.data.oneop.left = place;
-		return code;
+		return code;*/
+
+		place->kind = CONSTANT;
+		place->data.value = child->data;
+		return NULL;
 	}
 	else if(child->name == FLOAT) {
 		new_code->code.kind = ONEOP;
@@ -564,7 +573,7 @@ InterCodes* translate_Exp(TreeNode *root, OperandPoint place){
 			return code1;
 		}
 		else{
-			assert(t1->kind == ADDRESS);
+			assert(t1->kind == STRUCTADDRESS);
 			InterCodes *code2 = mallocInterCodes();
 			code2->code.kind = BINOP;
 			code2->code.data.binop.opkind = PLUS;
@@ -579,7 +588,14 @@ InterCodes* translate_Exp(TreeNode *root, OperandPoint place){
 	else if(operator->name == ASSIGNOP){
 		InterCodes* code1 = translate_Exp(child,place);
 		assert(place->kind == ADDRESS || place->kind == VARIABLE || place->kind == TEMP);
-		if(place->kind != ADDRESS){
+		OperandPoint temp = (OperandPoint)malloc(sizeof(Operand));
+		InterCodes* code2 = translate_Exp(operator->nextSibling, temp);
+		InterCodes* code3 = mallocInterCodes();
+		code3->code.kind = ONEOP;
+		code3->code.data.oneop.left = place;
+		code3->code.data.oneop.right = temp;
+		return mergeInterCodes(mergeInterCodes(code1, code2), code3);
+		/*if(place->kind != ADDRESS){
 			InterCodes* code2 = translate_Exp(operator->nextSibling, place);
 			return mergeInterCodes(code1, code2);
 		}
@@ -591,7 +607,7 @@ InterCodes* translate_Exp(TreeNode *root, OperandPoint place){
 			code3->code.data.oneop.left = place;
 			code3->code.data.oneop.right = t1;
 			return mergeInterCodes(mergeInterCodes(code1, code2), code3);
-		}
+		}*/
 	}
 	else if(child->name == Exp && operator->name == LB){
 		TreeNode* id = child->firstChild;
@@ -624,9 +640,16 @@ InterCodes* translate_Exp(TreeNode *root, OperandPoint place){
 		code2->code.data.binop.opkind = PLUS;
 		code2->code.data.binop.op1 = left;
 		code2->code.data.binop.op2 = temp;
-		place->kind = ADDRESS;
 		place->data.temp_no = allocate_varname();
+		if(getExp(root)->kind == STRUCTURE){
+			place->kind = STRUCTADDRESS;
+			printf("structruename:%s\n",get_temp_varname(place->data.temp_no));
+		}
+		else
+			place->kind = ADDRESS;
 		code2->code.data.binop.result = mallocOperand(VARIABLE, get_temp_varname(place->data.temp_no));
+
+		
 		return mergeInterCodes(mergeInterCodes(code1, offset_code), code2);
 	}
 	else{

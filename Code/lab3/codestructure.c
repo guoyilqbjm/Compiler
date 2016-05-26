@@ -28,6 +28,8 @@ char *getOperandName(OperandPoint p){
 			data[0] = '&';
 			strcpy(&(data[1]),p->data.refer_name);
 			return data;
+		case STRUCTADDRESS:
+			return get_temp_varname(p->data.temp_no);
 		default:printf("Wrong in getOperandName()！\n");return NULL;
 	}
 }
@@ -96,9 +98,9 @@ void printInterCodes(char *filename){
 				break;
 			case ARG:
 				fprintf(fp,"ARG ");
-				if(p->code.data.arg_value->kind == ADDRESS)
-					fprintf(fp,"%s\n",get_temp_varname(p->code.data.arg_value->data.temp_no));
-				else
+				//if(p->code.data.arg_value->kind == ADDRESS)
+				//	fprintf(fp,"%s\n",get_temp_varname(p->code.data.arg_value->data.temp_no));
+				//else
 					fprintf(fp,"%s\n",getOperandName(p->code.data.arg_value));
 				break;
 			case ONEOP:
