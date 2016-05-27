@@ -71,7 +71,6 @@ void printInterCodes(char *filename){
 		printf("生成中间代码出错.\n");
 		return;
 	}
-	printf("中间代码已输出到文件：%s\n", filename);
 	FILE *fp = fopen(filename,"w");
 	if(fp == NULL){
 		printf("Cannot open file \"%s\".\n",filename);
@@ -137,6 +136,7 @@ void printInterCodes(char *filename){
 		p = p->next;
 	}
 	fclose(fp);
+	printf("中间代码已输出到文件：%s\n", filename);
 	return;
 }
 
