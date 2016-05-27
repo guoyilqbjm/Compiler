@@ -108,8 +108,6 @@ void runCode(char *filename){
 	translate_Program(root);
 	
 	printInterCodes(filename);
-
-	printf("结果已经输出到文件\"%s\".\n",filename);
 }
 
 InterCodes *translate_Program(TreeNode *root){
