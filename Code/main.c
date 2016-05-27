@@ -5,12 +5,12 @@
 #include "lab2/type.h"
 #include "lab2/table.h"
 #include "lab2/common.h"
-
+#define PRINTSYNTAXTREE 0 
 #include "lab3/code_gr.h"
 int main(int argc,char **argv){
 
 	if(argc <= 2) {
-		printf("Usage: \"./parser test1.cmm output.ir\".\n");
+		printf("Usage: \"./parser testfilename.cmm outputfilename.ir\".\n");
 		return 1;
 	}
 	FILE *f = fopen(argv[1],"r");
@@ -21,9 +21,9 @@ int main(int argc,char **argv){
 	yyrestart(f);
 	yyparse();
 	if (!errorFlag) {
-		printTree(root, 0);
+	   if(PRINTSYNTAXTREE == 1)	
+			printTree(root, 0);
 		test();
-
 		runCode(argv[2]);
 	}
 	return 0;
