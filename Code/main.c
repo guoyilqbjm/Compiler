@@ -7,6 +7,8 @@
 #include "lab2/common.h"
 #define PRINTSYNTAXTREE 0 
 #include "lab3/code_gr.h"
+
+#include "lab4/msp.h"
 int main(int argc,char **argv){
 
 	if(argc <= 2) {
@@ -25,7 +27,9 @@ int main(int argc,char **argv){
 			printTree(root, 0);
 		test();
 		runCode(argv[2]);
-	}
+		char filename[] = "test.s";
+		irtomsp(filename);
+	} 
 	return 0;
 }
 
