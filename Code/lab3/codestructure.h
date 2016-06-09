@@ -11,6 +11,7 @@ struct Operand{
 		char *refer_name;
 		/* 关于地址 或者引用的存储未考虑 你自己设计一下了*/
 	} data;
+	int offset;//实验四 用于计算变量在栈中相对于栈顶的偏移量
 };
 typedef struct Operand Operand;
 typedef struct Operand* OperandPoint;

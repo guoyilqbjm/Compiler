@@ -17,7 +17,7 @@ int allocate_varname(){
 	varIndex++;
 	char *varname = VARNAME[varIndex];
 	varname[0] = 't';
-	if(varIndex>10){
+	if(varIndex>=10){
 		varname[1] = (char)(varIndex / 10 ) + '0';
 		varname[2] = (char)(varIndex % 10 ) + '0';
 		varname[3] = '\0';
@@ -34,7 +34,7 @@ char* allocate_labelname(){
 	labelIndex++;
 	char *label = LABELNAME[labelIndex];
 	label[0] = 'l';
-	if(labelIndex>10){
+	if(labelIndex>=10){
 		label[1] = (char)(labelIndex / 10) + '0';
 		label[2] = (char)(labelIndex % 10) + '0';
 		label[3] = '\0';
@@ -357,13 +357,11 @@ InterCodes *translate_Stmt(TreeNode *root){
 InterCodes* translate_Args(TreeNode *root, ArgListNode *arg_list){
 	TreeNode *child = root->firstChild;
 	TreeNode *comma = child->nextSibling;
-
-	OperandPoint t1 = (OperandPoint)malloc(sizeof(Operand));
-	t1->kind = TEMP;
-	t1->data.temp_no = allocate_varname();
-
+	int hhh = allocate_varname();
+	OperandPoint t1 = mallocOperand(TEMP,hhh);
+	printf("before name:%s\n number:%d",getOperandName(t1),hhh);
 	InterCodes *code1 = translate_Exp(child, t1);
-
+	printf("test name:%s\n",getOperandName(t1));
 	ArgListNode *new_arg_node = (ArgListNode *)malloc(sizeof(ArgListNode));
 	new_arg_node->operand_point = t1;
 	new_arg_node->next = arg_list->next;
@@ -417,10 +415,7 @@ InterCodes* translate_Exp(TreeNode *root, OperandPoint place){
 		}
 		else {
 			TreeNode *args = child->nextSibling->nextSibling;
-			OperandPoint new_temp = (OperandPoint)malloc(sizeof(Operand));
-			new_temp->kind = TEMP;
-			new_temp->data.temp_no = allocate_varname();
-
+			OperandPoint new_temp = mallocOperand(TEMP, allocate_varname());
 			if (args->name == Args) {		// Exp -> ID LP Args RP    / Args -> Exp COMMA Args | Exp
 				ArgListNode *arg_list = (ArgListNode *)malloc(sizeof(ArgListNode));		// head node with no content
 				arg_list->next = NULL;
@@ -443,8 +438,7 @@ InterCodes* translate_Exp(TreeNode *root, OperandPoint place){
 						arg_node = arg_node->next;
 					}
 
-					InterCodes *code_temp = (InterCodes *)malloc(sizeof(InterCodes));
-					code_temp->last = code_temp->next = NULL;
+					InterCodes *code_temp = mallocInterCodes();
 					code_temp->code.kind = CALL;
 					code_temp->code.data.funcall.left = new_temp;
 					code_temp->code.data.funcall.fun_name = child->data;
@@ -468,8 +462,7 @@ InterCodes* translate_Exp(TreeNode *root, OperandPoint place){
 					new_code->code.data.funcall.left = new_temp;
 					new_code->code.data.funcall.fun_name = child->data;
 				}
-				InterCodes *code2 = (InterCodes*)malloc(sizeof(InterCodes));
-				code2->last = code2->next = NULL;
+				InterCodes *code2 = mallocInterCodes();
 				code2->code.kind = ONEOP;
 				code2->code.data.oneop.left = place;
 				code2->code.data.oneop.right = new_temp;

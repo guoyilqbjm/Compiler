@@ -1,7 +1,7 @@
+
 int main(){
-	int a=1,b=2;
-	int c=a,d=b;
-	int f = 2;
-	int e = a+b+c+d+f;
-	return e;
+	int a =1 ,b;
+	b = read();
+	write(a);
+	return 0;
 }
