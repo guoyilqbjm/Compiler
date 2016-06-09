@@ -1,8 +1,19 @@
-int fib(int a,int b,int c,int d,int e){
-	return a+b+c+d+e;
+int fact(int n)
+{
+	if (n == 1)
+		return n;
+	else
+		return (n * fact(n - 1));
 }
 
-int main(){
-	write(fib(read(),read(),read(),read(),read()));
+int main()
+{
+	int m, result;
+	m = read();
+	if (m > 1)
+		result = fact(m);
+	else
+		result = 1;
+	write(result);
 	return 0;
 }

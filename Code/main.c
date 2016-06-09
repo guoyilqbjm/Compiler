@@ -12,7 +12,7 @@
 int main(int argc,char **argv){
 
 	if(argc <= 2) {
-		printf("Usage: \"./parser testfilename.cmm outputfilename.ir\".\n");
+		printf("Usage: \"./parser testfilename.cmm outputfilename.s\".\n");
 		return 1;
 	}
 	FILE *f = fopen(argv[1],"r");
@@ -26,9 +26,9 @@ int main(int argc,char **argv){
 	   if(PRINTSYNTAXTREE == 1)	
 			printTree(root, 0);
 		test();
-		runCode(argv[2]);
+		runCode("output.ir");
 		char filename[] = "test.s";
-		irtomsp(filename);
+		irtomsp(argv[2]);
 	} 
 	return 0;
 }

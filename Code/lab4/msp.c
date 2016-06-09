@@ -78,6 +78,8 @@ char *get_operand_label(OperandPoint p){
 		return p->data.var_name;
 	else if(p->kind == ADDRESS)
 		return get_temp_varname(p->data.temp_no);
+	else if(p->kind == REFERENCE)
+		return p->data.refer_name;
 	return NULL;
 }
 int testEqual(OperandPoint op1, OperandPoint op2){
@@ -85,21 +87,22 @@ int testEqual(OperandPoint op1, OperandPoint op2){
 		printf("illegal operation!\n");
 		return -1;
  	}
- 	/*printf("opkind:%d %s op2kind:%d %s\n", op1->kind,get_operand_label(op1), op2->kind,get_operand_label(op2));
- 	if(op1->kind == TEMP && op2->kind == VARIABLE && safetyStrcmp(get_temp_varname(op1->data.temp_no),op2->data.var_name)==0)
+ 	//printf("opkind:%d %s op2kind:%d %s\n", op1->kind,get_operand_label(op1), op2->kind,get_operand_label(op2));
+ 	if(op1->kind == TEMP && op2->kind == ADDRESS && op1->data.temp_no == op2->data.temp_no)
  		return 1;
- 	if(op2->kind == TEMP && op1->kind == VARIABLE && safetyStrcmp(get_temp_varname(op2->data.temp_no),op1->data.var_name)==0)
+ 	if(op2->kind == TEMP && op1->kind == ADDRESS && op1->data.temp_no == op2->data.temp_no)
  		return 1;
- 		*/
 	if(op1->kind != op2->kind)
 		return -1;
 	if(op1->kind == VARIABLE && safetyStrcmp(op1->data.var_name,op2->data.var_name)==0)
 		return 1;
 	if(op2->kind == TEMP && op1->data.temp_no == op2->data.temp_no)
 		return 1;
-	if(op2->kind == CONSTANT && safetyStrcmp(op1->data.value,op2->data.value)==0)
+	if(op2->kind == CONSTANT && safetyStrcmp(op1->data.value, op2->data.value)==0)
 		return 1;
 	if(op1->kind == ADDRESS && op1->data.temp_no == op2->data.temp_no)
+		return 1;
+	if(op1->kind == REFERENCE && safetyStrcmp(op1->data.refer_name,op2->data.refer_name)==0)
 		return 1;
 	return -1;
 }
@@ -120,7 +123,7 @@ void freeReg(FILE *fp, int i){
 	int offset = getOffset(name);
 	if(offset == -1){
 		printf("Assume never reached here!\n");
-		printf("error name:%s\n",getOperandName(allTempReg[i].operand));
+		printf("Your program has some problems.\n");
 		fprintf(fp,"sw %s, %d($sp)\n",allTempReg[i].name, stackOffset);
 	}
 	else{
@@ -164,6 +167,8 @@ void saveReg(FILE *fp){
 	}
 }
 
+int ttt = 0;
+
 char *reg(FILE *fp,OperandPoint operand, int load){
 	int i = 0;
 	while(i<regSize){
@@ -173,13 +178,12 @@ char *reg(FILE *fp,OperandPoint operand, int load){
 		if(testEqual(operand, allTempReg[i].operand) == 1){//寄存器中已经存在改变量 拿来使用即可。
 			return allTempReg[i].name;
 		}
-		if(allTempReg[i].operand->kind == CONSTANT)
-			break; 
 		++i;
  	}
 	/* 随机分配方案 */
 	if(i == regSize){
-		i = rand() % regSize;
+		i = ttt;
+		ttt = (ttt + 1)%regSize;
 		freeReg(fp, i);
 	}
 	allTempReg[i].operand = operand;
@@ -244,14 +248,19 @@ void irtomsp(char *filename){
 				fprintf(fp, "j %s\n", head->code.data.symbol_name);
 				break;
 			case ONEOP: 
+				/* 这里考虑了数组的使用 但应该使有bug的，还需要你来完成 */		
 				if(head->code.data.oneop.left->kind != ADDRESS){
-					if(head->code.data.oneop.right->kind == CONSTANT){
-						fprintf(fp, "li %s, %s\n", reg(fp, head->code.data.oneop.left,0), head->code.data.oneop.right->data.value);
-			 		}
-					else if(head->code.data.oneop.right->kind != ADDRESS)
+					assert(head->code.data.oneop.right->kind != REFERENCE);
+					/*if(head->code.data.oneop.right->kind == CONSTANT){
+						//fprintf(fp, "li %s, %s\n", reg(fp, head->code.data.oneop.left,0), head->code.data.oneop.right->data.value);
+			 		}*/
+					if(head->code.data.oneop.right->kind != ADDRESS){
 						fprintf(fp, "move %s, %s\n", reg(fp,head->code.data.oneop.left,0), reg(fp, head->code.data.oneop.right, 1));//表示右边的值需要从内村中取出来便于使用，左边的变量需要申请栈空间。
-					else 
-						fprintf(fp, "lw %s, 0(%s)\n", reg(fp,head->code.data.oneop.left,0), reg(fp, head->code.data.oneop.right, 1));
+					}
+					else {
+						fprintf(fp, "add $s1, %s, $sp\n", reg(fp, head->code.data.oneop.right, 1));
+						fprintf(fp, "lw %s, 0($s1)\n", reg(fp,head->code.data.oneop.left, 0));
+					}
 			 	}
 				else {
 					temp_char = NULL;
@@ -265,7 +274,8 @@ void irtomsp(char *filename){
 						fprintf(fp, "lw $s0, 0(%s)\n", reg(fp, head->code.data.oneop.right, 1));
 						temp_char = "$s0";
 					}
-					fprintf(fp, "sw %s, 0(%s)\n", temp_char, reg(fp,head->code.data.oneop.left, 1));
+					fprintf(fp, "add $s1, %s, $sp\n", reg(fp, head->code.data.oneop.left, 1));
+					fprintf(fp, "sw %s, 0($s1)\n", temp_char);
 				} 
 				break;
 
@@ -291,13 +301,10 @@ void irtomsp(char *filename){
 						printf("Error opration in %s at %d.\n",__FILE__,__LINE__);
 						break;
 					}
-				printf("binop opkind = %d\n",head->code.data.binop.opkind);
 				break;
 			case CALL:	case READ:	case WRITE:
-				printf("here:%d\n",head->code.kind);
 				//fprintf(fp, "sw %d, %d($sp)\n", stackOffset, stackOffset);
 				fprintf(fp, "sw $ra, %d($sp)\n", stackOffset);
-
 				/* prepare arguments. */
 				if(head->code.kind == WRITE){
 					if(head->code.data.operand_point->kind == CONSTANT){
@@ -310,7 +317,6 @@ void irtomsp(char *filename){
 				else if(head->code.kind == CALL){
 					temp_code = head->last;
 					temp_int = 0;
-
 					while(temp_code->code.kind == ARG && temp_int < 4){
 						if(temp_code->code.data.arg_value->kind == CONSTANT)
 							fprintf(fp, "move $a%d, %s\n",temp_int, temp_code->code.data.arg_value->data.value);
@@ -331,8 +337,9 @@ void irtomsp(char *filename){
 					}
 
 				}
-
-				saveReg(fp);
+					
+				if(head->code.kind == CALL)
+					saveReg(fp);
 				fprintf(fp, "addi $sp, $sp, %d\n", stackOffset + 4);
 				if(head->code.kind == WRITE)
 					temp_char = "write";
@@ -347,8 +354,10 @@ void irtomsp(char *filename){
 				fprintf(fp, "lw $ra, %d($sp)\n", stackOffset);
 
 				/* restore reg */
-				restoreReg(fp);
-
+				/*
+				if(head->code.kind == CALL)
+					restoreReg(fp);
+				*/
 				/* store return value. */
 				if(head->code.kind == READ){
 					//printf(" read function %d  %s \n", atoi(&(head->code.data.symbol_name[1])), head->code.data.symbol_name);
@@ -382,7 +391,7 @@ void irtomsp(char *filename){
 				fprintf(fp, "%s %s, %s, %s\n", relop, reg(fp, head->code.data.ifstmt.left, 1), reg(fp, head->code.data.ifstmt.right, 1), head->code.data.ifstmt.label);
 				break;
 			case ARG: /* 过程调用 */
-				printf("finish in call\n");
+				/* finish in call.*/
 				break;
 			case PARAM:
 				temp_int = 0;
@@ -403,7 +412,7 @@ void irtomsp(char *filename){
 				head = head->last;
 				break;
 			case DEC:
-				printf("don't finish a dimession arryay.");
+				printf("don't finish a dimession arryay. Please finish it.\n");
 				break;
 			default:
 				printf("Don't finish!\n");
@@ -412,4 +421,6 @@ void irtomsp(char *filename){
 		head = head->next;
 	} 
 	fclose(fp);
+
+	printf("目标代码已经输出到文件:%s\n", filename);
 }

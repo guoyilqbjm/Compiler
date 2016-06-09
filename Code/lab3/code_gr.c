@@ -359,9 +359,7 @@ InterCodes* translate_Args(TreeNode *root, ArgListNode *arg_list){
 	TreeNode *comma = child->nextSibling;
 	int hhh = allocate_varname();
 	OperandPoint t1 = mallocOperand(TEMP,hhh);
-	printf("before name:%s\n number:%d",getOperandName(t1),hhh);
 	InterCodes *code1 = translate_Exp(child, t1);
-	printf("test name:%s\n",getOperandName(t1));
 	ArgListNode *new_arg_node = (ArgListNode *)malloc(sizeof(ArgListNode));
 	new_arg_node->operand_point = t1;
 	new_arg_node->next = arg_list->next;

@@ -19,6 +19,7 @@ YFO = $(YFC:.c=.o)
 TEMPFILE = $(shell find ./ -name "*~")
 SWPFILE = $(shell find ./ -name "*.swp")
 IRFILE = $(shell find ./ -name "*.ir")
+SFILE = $(shell find ./ -name "*.s")
 parser: syntax $(filter-out $(LFO),$(OBJS))
 	$(CC) -o parser $(filter-out $(LFO),$(OBJS)) -lfl -ly
 TestFile = "../Test/lab4/test2.cmm"
@@ -38,7 +39,8 @@ syntax-c: $(YFILE)
 test:
 	make clean
 	make
-	./parser $(TestFile) output.ir
+	cp parser ../parser
+	./parser $(TestFile) result.s
 clean:
 	rm -f parser lex.yy.c syntax.tab.c syntax.tab.h syntax.output
 	rm -f $(OBJS) $(OBJS:.o=.d)
@@ -47,3 +49,4 @@ clean:
 	rm -f $(TEMPFILE) 
 	rm -f $(SWPFILE)
 	rm -rf $(IRFILE)
+	rm -rf $(SFILE)
