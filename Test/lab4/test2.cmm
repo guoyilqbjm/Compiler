@@ -1,7 +1,8 @@
+int fib(int a,int b,int c,int d,int e){
+	return a+b+c+d+e;
+}
 
 int main(){
-	int a =1 ,b;
-	b = read();
-	write(a);
+	write(fib(read(),read(),read(),read(),read()));
 	return 0;
 }
