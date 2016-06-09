@@ -40,6 +40,7 @@ test:
 	make clean
 	make
 	cp parser ../parser
+	chmod +x ../parser
 	./parser $(TestFile) result.s
 clean:
 	rm -f parser lex.yy.c syntax.tab.c syntax.tab.h syntax.output
