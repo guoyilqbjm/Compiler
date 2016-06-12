@@ -22,7 +22,7 @@ IRFILE = $(shell find ./ -name "*.ir")
 SFILE = $(shell find ./ -name "*.s")
 parser: syntax $(filter-out $(LFO),$(OBJS))
 	$(CC) -o parser $(filter-out $(LFO),$(OBJS)) -lfl -ly
-TestFile = "../Test/lab4/test2.cmm"
+TestFile = "../Test/lab4/test_array.cmm"
 syntax: lexical syntax-c
 	$(CC) -c $(YFC) -o $(YFO)
 

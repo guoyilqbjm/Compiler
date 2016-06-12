@@ -88,10 +88,10 @@ int testEqual(OperandPoint op1, OperandPoint op2){
 		return -1;
  	}
  	//printf("opkind:%d %s op2kind:%d %s\n", op1->kind,get_operand_label(op1), op2->kind,get_operand_label(op2));
- 	if(op1->kind == TEMP && op2->kind == ADDRESS && op1->data.temp_no == op2->data.temp_no)
- 		return 1;
- 	if(op2->kind == TEMP && op1->kind == ADDRESS && op1->data.temp_no == op2->data.temp_no)
- 		return 1;
+ 	//if(op1->kind == TEMP && op2->kind == ADDRESS && op1->data.temp_no == op2->data.temp_no)
+ //		return 1;
+ 	//if(op2->kind == TEMP && op1->kind == ADDRESS && op1->data.temp_no == op2->data.temp_no)
+ //		return 1;
 	if(op1->kind != op2->kind)
 		return -1;
 	if(op1->kind == VARIABLE && safetyStrcmp(op1->data.var_name,op2->data.var_name)==0)
@@ -113,7 +113,7 @@ void freeReg(FILE *fp, int i){
 		return;
 	}
 	assert(allTempReg[i].operand != NULL);
-	if(allTempReg[i].operand->kind == CONSTANT){
+	if(allTempReg[i].operand->kind == CONSTANT || allTempReg[i].operand->kind == ADDRESS || allTempReg[i].operand->kind == REFERENCE){
 		allTempReg[i].operand = NULL;
 		return;
 	}
@@ -153,7 +153,7 @@ void saveReg(FILE *fp){
 	int i = 0;
 	while(i<regSize){
 		if(allTempReg[i].operand != NULL){
-			if(allTempReg[i].operand->kind == CONSTANT){
+			if(allTempReg[i].operand->kind == CONSTANT || allTempReg[i].operand->kind == ADDRESS || allTempReg[i].operand->kind == REFERENCE){
 				allTempReg[i].operand = NULL;
 				TempOperand[i] = NULL;
 			}
@@ -168,6 +168,15 @@ void saveReg(FILE *fp){
 }
 
 int ttt = 0;
+
+int findReg(OperandPoint operand){
+	for(int i=0;i<regSize;++i){
+		if(allTempReg[i].operand != NULL && testEqual(allTempReg[i].operand, operand)==1){
+			return i;
+		}
+	}
+	return -1;
+}
 
 char *reg(FILE *fp,OperandPoint operand, int load){
 	int i = 0;
@@ -191,6 +200,12 @@ char *reg(FILE *fp,OperandPoint operand, int load){
 	if(load == 1){//说明生成的寄存器里面已经包含了要用到的值
 		if(operand->kind == CONSTANT){//表示当前常量需要存放到寄存器中使用了，此时没有必要为这个常量分配空间。
 			fprintf(fp, "li %s, %s\n", allTempReg[i].name, temp);
+		}
+		else if(operand->kind == ADDRESS){
+			fprintf(fp, "move %s, %s\n", allTempReg[i].name, reg(fp, mallocOperand(TEMP, operand->data.temp_no), 1));
+		}
+		else if(operand->kind == REFERENCE){
+			fprintf(fp, "addi %s, $sp, %d\n", allTempReg[i].name, getOffset(temp));
 		}
 		else{
 			//执行到这里说明需要把变量从内存中加载出来
@@ -242,9 +257,13 @@ void irtomsp(char *filename){
 					}
 					fprintf(fp, "\n");
 				}
+				else{
+					saveReg(fp);
+				}
 				fprintf(fp,"%s:\n", head->code.data.symbol_name);
 				break;
 			case GOTO:
+				saveReg(fp);
 				fprintf(fp, "j %s\n", head->code.data.symbol_name);
 				break;
 			case ONEOP: 
@@ -258,24 +277,11 @@ void irtomsp(char *filename){
 						fprintf(fp, "move %s, %s\n", reg(fp,head->code.data.oneop.left,0), reg(fp, head->code.data.oneop.right, 1));//表示右边的值需要从内村中取出来便于使用，左边的变量需要申请栈空间。
 					}
 					else {
-						fprintf(fp, "add $s1, %s, $sp\n", reg(fp, head->code.data.oneop.right, 1));
-						fprintf(fp, "lw %s, 0($s1)\n", reg(fp,head->code.data.oneop.left, 0));
+						fprintf(fp, "lw %s, 0(%s)\n", reg(fp, head->code.data.oneop.left, 0), reg(fp, head->code.data.oneop.right, 1));
 					}
 			 	}
 				else {
-					temp_char = NULL;
-					if(head->code.data.oneop.right->kind == CONSTANT){
-						fprintf(fp, "li $s0, %s\n", head->code.data.oneop.right->data.value);
-						temp_char = "$s0";
-				 	}
-					else if(head->code.data.oneop.right->kind != ADDRESS)
-						temp_char = reg(fp, head->code.data.oneop.right, 1);
-				 	else{
-						fprintf(fp, "lw $s0, 0(%s)\n", reg(fp, head->code.data.oneop.right, 1));
-						temp_char = "$s0";
-					}
-					fprintf(fp, "add $s1, %s, $sp\n", reg(fp, head->code.data.oneop.left, 1));
-					fprintf(fp, "sw %s, 0($s1)\n", temp_char);
+					fprintf(fp, "sw %s, 0(%s)\n", reg(fp, head->code.data.oneop.right, 1), reg(fp, head->code.data.oneop.left, 1));
 				} 
 				break;
 
@@ -310,6 +316,9 @@ void irtomsp(char *filename){
 					if(head->code.data.operand_point->kind == CONSTANT){
 						fprintf(fp, "li $a0, %s\n", head->code.data.operand_point->data.value);
 					}
+					else if(head->code.data.operand_point->kind == ADDRESS){
+						fprintf(fp, "lw $a0, 0(%s)\n", reg(fp, head->code.data.operand_point, 1));
+					}
 					else{
 						fprintf(fp, "move $a0, %s\n", reg(fp, head->code.data.operand_point, 1));
 					}
@@ -318,8 +327,12 @@ void irtomsp(char *filename){
 					temp_code = head->last;
 					temp_int = 0;
 					while(temp_code->code.kind == ARG && temp_int < 4){
-						if(temp_code->code.data.arg_value->kind == CONSTANT)
+						if(temp_code->code.data.arg_value->kind == CONSTANT){
 							fprintf(fp, "move $a%d, %s\n",temp_int, temp_code->code.data.arg_value->data.value);
+						}
+						else if(temp_code->code.data.operand_point->kind == ADDRESS){
+							fprintf(fp, "lw $a%d, 0(%s)\n", temp_int, reg(fp, temp_code->code.data.operand_point, 1));
+						}
 						else
 							fprintf(fp, "move $a%d, %s\n", temp_int, reg(fp, temp_code->code.data.arg_value, 1));
 						temp_code = temp_code->last;
@@ -330,7 +343,13 @@ void irtomsp(char *filename){
 						assert(temp_int == 4);
 						temp_int = stackOffset + 4;
 						while(temp_code->code.kind == ARG){
-							fprintf(fp, "sw %s, %d($sp)\n", reg(fp, temp_code->code.data.arg_value, 1), temp_int);
+							if(temp_code->code.data.operand_point->kind == ADDRESS){
+								fprintf(fp, "lw $s0, 0(%s)\n", reg(fp, temp_code->code.data.arg_value, 1));
+								temp_char = "$s0";
+							}
+							else
+								temp_char = reg(fp, temp_code->code.data.arg_value, 1);
+							fprintf(fp, "sw %s, %d($sp)\n", temp_char, temp_int);
 							temp_int += 4;
 							temp_code = temp_code->last;
 						}
@@ -388,7 +407,20 @@ void irtomsp(char *filename){
 					relop = "ble";
 				else
 					printf("Error relop in %s at %d.\n", __FILE__, __LINE__);
-				fprintf(fp, "%s %s, %s, %s\n", relop, reg(fp, head->code.data.ifstmt.left, 1), reg(fp, head->code.data.ifstmt.right, 1), head->code.data.ifstmt.label);
+				if(head->code.data.ifstmt.left->kind == CONSTANT){
+					fprintf(fp, "li $s0, %s\n", head->code.data.ifstmt.left->data.value);
+				}
+				else{
+					fprintf(fp, "lw $s0, %d($sp)\n", getOffset(get_operand_label(head->code.data.ifstmt.left)));
+
+				}
+				if(head->code.data.ifstmt.right->kind == CONSTANT){
+					fprintf(fp, "li $s1, %s\n", head->code.data.ifstmt.right->data.value);
+				}
+				else{
+					fprintf(fp, "lw $s1, %d($sp)\n", getOffset(get_operand_label(head->code.data.ifstmt.right)));
+				}
+				fprintf(fp, "%s $s0, $s1, %s\n", relop, head->code.data.ifstmt.label);
 				break;
 			case ARG: /* 过程调用 */
 				/* finish in call.*/
@@ -412,7 +444,8 @@ void irtomsp(char *filename){
 				head = head->last;
 				break;
 			case DEC:
-				printf("don't finish a dimession arryay. Please finish it.\n");
+				setOffset(get_operand_label(head->code.data.decstmt.left));
+				stackOffset += head->code.data.decstmt.size - 4;
 				break;
 			default:
 				printf("Don't finish!\n");
